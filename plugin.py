@@ -83,6 +83,79 @@ class GoToKeywordThread(threading.Thread):
             return []
         return keywords[lower_name]
 
+class RobotRunTestCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        file_path = view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        path, file_name = os.path.split(file_path)
+        sel = view.sel()[0]
+        test_case = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+
+        #os.chdir('c:\Dev\PortalUIService\tests\functional\Robot')
+        #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
+        sublime.error_message('Run test is complete')
+
+class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        file_path = view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        path, file_name = os.path.split(file_path)
+
+        #os.chdir('c:\Dev\PortalUIService\tests\functional\Robot')
+        #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
+        sublime.error_message('Run test suite is complete')
+
+class RobotRunPanelCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        file_path = view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        path, file_name = os.path.split(file_path)
+
+        #os.chdir('c:\Dev\PortalUIService\tests\functional\Robot')
+        #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
+        sublime.error_message('Run panel is complete')
+
+class RobotFindReferencesCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        file_path = view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        sublime.error_message('Find References command has not yet been implemented!')
 
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):

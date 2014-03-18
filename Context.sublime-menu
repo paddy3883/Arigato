@@ -1,0 +1,22 @@
+[
+	{ 
+		"caption": "Go to definition", 
+		"command": "robot_go_to_keyword" 
+	}
+	, { 
+		"caption": "Find references", 
+		"command": "robot_find_references" 
+	}
+	, { 
+		"caption": "Run test", 
+		"command": "robot_run_test" 
+	}
+	, { 
+		"caption": "Run test suite", 
+		"command": "robot_run_test_suite" 
+	}
+	, { 
+		"caption": "Run...", 
+		"command": "robot_run_panel"
+	}
+]
