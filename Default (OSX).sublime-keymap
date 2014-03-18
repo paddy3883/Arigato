@@ -1,0 +1,3 @@
+[
+	{ "keys": ["alt+enter"], "command": "robot_go_to_keyword" }
+]
