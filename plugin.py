@@ -15,6 +15,10 @@ import threading
 import re
 
 import sublime, sublime_plugin
+import shlex
+import subprocess
+import select
+import functools
 
 from keyword_parse import get_keyword_at_pos
 from string_populator import populate_testcase_file
@@ -43,20 +47,21 @@ class RobotTestSuite(object):
             return
 
         path, file_name = os.path.split(file_path)
-        #sublime.message_dialog(file_name)
 
         root_folder = self.view.window().folders()[0]
-        output_target = OutputTarget(self.view.window(), 'dir', root_folder)
-        output_target.append_text(root_folder)
-        output_target.append_text('\n')
-        output_target.append_text(file_name)
+        results_dir = root_folder + '\\TestResults\\TestResults-gc'
+        suites_dir = root_folder + '\\testsuites'
+        suite_name = file_name.rstrip('.txt')
 
-        os.chdir(root_folder)
-        #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
-        webbrowser.open_new('file://C:/Dev/PortalUIService/tests/functional/Robot/TestResults/TestResults-gc/log.html')
+        output_target = OutputTarget(self.view.window(), 'dir', root_folder)
+
+        def _C(output):
+            if output is not None:
+                output_target.append_text(output)
+
+        process('pybot --variable os_browser:gc --outputdir ' + results_dir + ' --variable environment_name:cp --suite ' + suite_name + ' ' + suites_dir, _C, root_folder, results_dir)
 
         return True
-
 
 #TODO: move this into robot_run.py
 class RobotTestCase(object):
@@ -78,11 +83,24 @@ class RobotTestCase(object):
         sel = view.sel()[0]
         test_case = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
 
-        #os.chdir('c:\Dev\PortalUIService\tests\functional\Robot')
-        #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
-        sublime.message_dialog(test_case)
-        return True
+        if (len(test_case) == 0) or (test_case[0] == " ") or (test_case[0] == "\t"):
+            return
 
+        test_case = test_case.replace(" ", "").replace("\t", "")
+
+        root_folder = self.view.window().folders()[0]
+        results_dir = root_folder + '\\TestResults\\TestResults-gc'
+        suites_dir = root_folder + '\\testsuites'
+
+        output_target = OutputTarget(self.view.window(), 'dir', root_folder)
+
+        def _C(output):
+            if output is not None:
+                output_target.append_text(output)
+
+        process('pybot --variable os_browser:gc --outputdir ' + results_dir + ' --variable environment_name:cp --test ' + test_case + ' ' + suites_dir, _C, root_folder, results_dir)
+
+        return True
 
 def is_robot_format(view):
     return view.settings().get('syntax').endswith('robot.tmLanguage')
@@ -301,3 +319,67 @@ class OutputTarget():
     def set_status(self, tag, message):
 
         self.console.set_status(tag, message)
+
+def process(command, callback, working_dir, results_dir):
+
+    thread = threading.Thread(target=_process, kwargs={
+        'command': command,
+        'callback': callback,
+        'working_dir': working_dir,
+        'results_dir': results_dir
+    })
+    thread.start()
+
+def _process(command, callback, working_dir, results_dir, **kwargs):
+    startupinfo = None
+    if os.name == 'nt':
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+    try:
+
+        main_thread(callback, command + '\n\n')
+        proc = subprocess.Popen(command,
+                                stdin=subprocess.PIPE,
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=True,
+                                cwd=working_dir,
+                                startupinfo=startupinfo)
+
+        return_code = None
+        while return_code is None:
+            return_code = proc.poll()
+
+            if return_code is None or return_code == 0:
+
+                output = True
+                while output:
+                    output = proc.stdout.readline()
+                    main_thread(callback, output, **kwargs)
+
+            if  return_code == 1:
+                main_thread(callback, '\nTest execution is complete, but there are test failures!', **kwargs)
+
+                output_file_name = results_dir + '/log.html'
+                if os.path.isfile(output_file_name):
+                    webbrowser.open_new('file://' + output_file_name)
+
+    except subprocess.CalledProcessError as e:
+
+        main_thread(callback, e.returncode)
+
+    except OSError as e:
+
+        if e.errno == 2:
+            sublime.message_dialog('Command not found\n\nCommand is: %s' % command)
+        else:
+            raise e
+
+    main_thread(callback, '\nTest execution is complete and all tests passed!', **kwargs)
+
+def main_thread(callback, *args, **kwargs):
+
+    sublime.set_timeout(functools.partial(callback, *args, **kwargs), 0)
+    #sublime.set_timeout_async(functools.partial(callback, *args, **kwargs), 0)
