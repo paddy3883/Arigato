@@ -21,6 +21,8 @@ from string_populator import populate_testcase_file
 from robot_scanner import Scanner, detect_robot_regex
 import stdlib_keywords
 
+from os.path import dirname, realpath
+
 views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
@@ -186,14 +188,33 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
         if not is_robot_format(view):
             return
 
-        file_path = view.file_name()
+        sel = view.sel()[0]
+        line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+        row, col = view.rowcol(sel.begin())
 
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return
-
-        sublime.error_message('Find References command has not yet been implemented!')
-
+        keyword = get_keyword_at_pos(line, col)
+        
+        if not keyword:
+            sublime.error_message('No keyword detected')
+            return	
+        
+        window = sublime.active_window()
+        
+        #sublime.error_message(file_path)
+        #view.window()
+        window.run_command('hide_panel')
+        
+        # Set up options for the current version
+        options = {"panel": "find_in_files", "find": keyword, "where":"<open files>,<open folders>"}
+        view.run_command('slurp_find_string')
+        # Open the search path
+        window.run_command("show_panel", options)
+        #sublime.error_message('got to here2')
+        
+        #window.run_command('hide_panel')
+        window.run_command("show_panel", {"panel": "output.find_results"})
+        sublime.error_message('got to here3')
+		
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -256,7 +277,6 @@ class AutoComplete(sublime_plugin.EventListener):
             return user_keywords
 
 class OutputTarget():
-
     def __init__(self, window, command, working_dir):
 
         self.console = window.new_file()
