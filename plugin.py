@@ -21,10 +21,10 @@ from string_populator import populate_testcase_file
 from robot_scanner import Scanner, detect_robot_regex
 import stdlib_keywords
 
-
 views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
+
 
 #TODO: move this into robot_run.py
 class RobotTestSuite(object):
@@ -40,9 +40,17 @@ class RobotTestSuite(object):
             return
 
         path, file_name = os.path.split(file_path)
-        #os.chdir('c:\Dev\PortalUIService\tests\functional\Robot')
+        #sublime.message_dialog(file_name)
+
+        root_folder = self.view.window().folders()[0]
+        output_target = OutputTarget(self.view.window(), 'dir', root_folder)
+        output_target.append_text(root_folder)
+        output_target.append_text('\n')
+        output_target.append_text(file_name)
+
+        os.chdir(root_folder)
         #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
-        sublime.message_dialog(file_name)
+
         return True
 
 
@@ -246,3 +254,27 @@ class AutoComplete(sublime_plugin.EventListener):
             user_keywords = [(kw[0].keyword.name, kw[0].keyword.name) for kw in keywords.itervalues()
                                 if kw[0].keyword.name.lower().startswith(lower_prefix)]
             return user_keywords
+
+class OutputTarget():
+
+    def __init__(self, window, command, working_dir):
+
+        self.console = window.new_file()
+        self.console.set_name('*Output*')
+
+        self.console.set_scratch(True)
+        self.console.set_read_only(True)
+
+    def append_text(self, output):
+
+        console = self.console
+
+        console.set_read_only(False)
+        edit = console.begin_edit()
+        console.insert(edit, console.size(), output)
+        console.end_edit(edit)
+        console.set_read_only(True)
+
+    def set_status(self, tag, message):
+
+        self.console.set_status(tag, message)
