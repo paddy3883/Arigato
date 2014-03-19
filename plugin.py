@@ -236,7 +236,7 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
             newView.sel().clear()
             newView.sel().add(sublime.Region(pt))
             newView.show(pt)
-        
+			
         window.show_quick_panel(listItems, on_done, sublime.MONOSPACE_FONT)
       
 
