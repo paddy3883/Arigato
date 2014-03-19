@@ -487,3 +487,8 @@ class Test():
 
         process('pybot --outputdir ' + self.results_dir + self.variable_line + '--test ' + test_case + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
 
+class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
+    def run(self):
+
+        current_folder = sublime.active_window().folders()[0]
+        sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
