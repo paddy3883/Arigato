@@ -236,9 +236,53 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
             newView.sel().clear()
             newView.sel().add(sublime.Region(pt))
             newView.show(pt)
-			
+
         window.show_quick_panel(listItems, on_done, sublime.MONOSPACE_FONT)
       
+
+
+class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
+    currentKeyword = None 
+    def run(self):
+        view = sublime.active_window().active_view()
+
+        if not is_robot_format(view):
+            return
+
+        sel = view.sel()[0]
+        line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+        row, col = view.rowcol(sel.begin())
+
+        self.currentKeyword = get_keyword_at_pos(line, col)
+        self.window.show_input_panel("Replace With:", "", self.on_done, None, None)
+        pass
+
+    def on_done(self, text):
+        try:
+            if self.window.active_view():
+                self.window.active_view().run_command("robot_replace_references", {"oldKeyword":self.currentKeyword, "newKeyword": text} )
+        except ValueError:
+            pass
+
+class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, oldKeyword, newKeyword):
+        sublime.error_message('Replace with ' + oldKeyword + ' with ' +newKeyword)
+        ## Convert from 1 based to a 0 based line number
+        #line = int(line) - 1
+
+        ## Negative line numbers count from the end of the buffer
+        #if line < 0:
+        #    lines, _ = self.view.rowcol(self.view.size())
+        #    line = lines + line + 1
+
+        #pt = self.view.text_point(line, 0)
+
+        #self.view.sel().clear()
+        #self.view.sel().add(sublime.Region(pt))
+
+        #self.view.show(pt)
+
 
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):

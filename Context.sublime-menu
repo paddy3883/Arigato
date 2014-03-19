@@ -8,6 +8,10 @@
 		"command": "robot_find_references" 
 	}
 	, { 
+		"caption": "Replace references", 
+		"command": "prompt_robot_replace_references" 
+	}
+	, { 
 		"caption": "Run test", 
 		"command": "robot_run_test" 
 	}
