@@ -20,6 +20,7 @@ from keyword_parse import get_keyword_at_pos
 from string_populator import populate_testcase_file
 from robot_scanner import Scanner, detect_robot_regex
 import stdlib_keywords
+import webbrowser
 
 from os.path import dirname, realpath
 
@@ -52,6 +53,7 @@ class RobotTestSuite(object):
 
         os.chdir(root_folder)
         #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
+        webbrowser.open_new('file://C:/Dev/PortalUIService/tests/functional/Robot/TestResults/TestResults-gc/log.html')
 
         return True
 
@@ -214,7 +216,8 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
         #window.run_command('hide_panel')
         window.run_command("show_panel", {"panel": "output.find_results"})
         sublime.error_message('got to here3')
-		
+
+
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
