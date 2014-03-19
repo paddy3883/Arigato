@@ -307,6 +307,7 @@ class OutputTarget():
 
         self.console.set_scratch(True)
         self.console.set_read_only(True)
+        self.console.set_syntax_file(os.path.join(plugin_dir, 'robot-output.tmLanguage'))
 
     def append_text(self, output):
 
