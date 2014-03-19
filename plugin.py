@@ -176,9 +176,7 @@ class RobotRunPanelCommand(sublime_plugin.TextCommand):
 
         path, file_name = os.path.split(file_path)
 
-        #os.chdir('c:\Dev\PortalUIService\tests\functional\Robot')
-        #os.system('runFunctionalTests.cmd gc cp --test ' + test_case)
-        sublime.error_message('Run panel is complete')
+        sublime.error_message('Run panel is not yet implemented')
 
 class RobotFindReferencesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -372,13 +370,34 @@ class Test():
         self.view = view;
         path, self.file_name = os.path.split(view.file_name())
         self.root_folder = view.window().folders()[0]
-        self.results_dir = self.root_folder + '\\TestResults\\TestResults-gc'
-        self.suites_dir = self.root_folder + '\\' + 'testsuites'
         self.suite_name = self.file_name.rstrip('.txt')
 
-        json_data = open(self.root_folder + '\\robot.sublime-build')
-        data = json.load(json_data)
-        json_data.close()
+        # Default values
+        self.outputdir = 'TestResults'
+        self.testsuites = 'testsuites'
+        self.variables = ["os_browser:gc", "environment_name:cp"]
+
+        settings_file_name = os.path.join(self.root_folder, 'robot.sublime-build')
+
+        if os.path.isfile(settings_file_name):
+            json_data = open(settings_file_name)
+            data = json.load(json_data)
+            json_data.close()
+
+            if len(data["testsuites"]) > 0:
+                self.testsuites = data["testsuites"]
+
+            if len(data["outputdir"]) > 0:
+                self.outputdir = data["outputdir"]
+
+            self.variables = data["variables"]
+
+        self.results_dir = os.path.join(self.root_folder, self.outputdir)
+        self.testsuites = os.path.join(self.root_folder, self.testsuites)
+        
+        self.variable_line = ' '
+        for variable in self.variables:
+            self.variable_line += '--variable ' + variable + ' '
 
     def run_test_suite(self):
         output_target = OutputTarget(self.view.window(), self.root_folder)
@@ -387,7 +406,7 @@ class Test():
             if output is not None:
                 output_target.append_text(output)
 
-        process('pybot --variable os_browser:gc --outputdir ' + self.results_dir + ' --variable environment_name:cp --suite ' + self.suite_name + ' ' + self.suites_dir, _C, self.root_folder, self.results_dir)
+        process('pybot --outputdir ' + self.results_dir + self.variable_line + '--suite ' + self.suite_name + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
 
     def run_test_case(self, test_case):
         output_target = OutputTarget(self.view.window(), self.root_folder)
@@ -396,5 +415,5 @@ class Test():
             if output is not None:
                 output_target.append_text(output)
 
-        process('pybot --variable os_browser:gc --outputdir ' + self.results_dir + ' --variable environment_name:cp --test ' + test_case + ' ' + self.suites_dir, _C, self.root_folder, self.results_dir)
+        process('pybot --outputdir ' + self.results_dir + self.variable_line + '--test ' + test_case + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
 
