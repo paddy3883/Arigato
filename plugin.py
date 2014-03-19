@@ -174,6 +174,7 @@ class RobotRunPanelCommand(sublime_plugin.TextCommand):
         sublime.error_message('Run panel is complete')
 
 class RobotFindReferencesCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
         view = self.view
 
         if not is_robot_format(view):
