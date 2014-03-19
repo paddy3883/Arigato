@@ -178,7 +178,17 @@ class RobotRunPanelCommand(sublime_plugin.TextCommand):
 
         sublime.error_message('Run panel is not yet implemented')
 
+class MatchingFile:
+    def __init__(self, lineText, fileName, filePath, lineNumber):
+        self.lineText = lineText
+        self.fileName = fileName
+        self.filePath = filePath
+        self.lineNumber = lineNumber
+
 class RobotFindReferencesCommand(sublime_plugin.TextCommand):
+    matchingLines = []
+    window = None
+        
     def run(self, edit):
         view = self.view
 
@@ -194,24 +204,39 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
         if not keyword:
             sublime.error_message('No keyword detected')
             return	
-        
+                
         window = sublime.active_window()
+      
+        listItems = []
+        matchingLines = []
+        for folder in view.window().folders():
+            for root, dirs, files in os.walk(folder):
+                for f in files:
+                    if f.endswith('.txt') and f != '__init__.txt':
+                        path = os.path.join(root, f)
+                        try:
+                            with open(path, 'rb') as openFile:
+                                lines = openFile.readlines()
+                                lineNumber = 0 
+                                for aLine in lines:
+                                    lineNumber = lineNumber + 1
+                                    if keyword in aLine:
+                                        matchingLine= MatchingFile(aLine.strip(),str(f),path, lineNumber)
+                                        matchingLines.append(matchingLine)
+                                        listItems.append(matchingLine.fileName + ': #' + str(matchingLine.lineNumber) + ' - '+ matchingLine.lineText)
+                        except IOError as e:
+                            return
         
-        #sublime.error_message(file_path)
-        #view.window()
-        window.run_command('hide_panel')
-        
-        # Set up options for the current version
-        options = {"panel": "find_in_files", "find": keyword, "where":"<open files>,<open folders>"}
-        view.run_command('slurp_find_string')
-        # Open the search path
-        window.run_command("show_panel", options)
-        #sublime.error_message('got to here2')
-        
-        #window.run_command('hide_panel')
-        window.run_command("show_panel", {"panel": "output.find_results"})
-        sublime.error_message('got to here3')
-
+        def on_done(i):
+            newView = window.open_file(matchingLines[i].filePath)
+            window.focus_view(newView)
+            pt = newView.text_point(matchingLines[i].lineNumber-1, 0)
+            newView.sel().clear()
+            newView.sel().add(sublime.Region(pt))
+            newView.show(pt)
+			
+        window.show_quick_panel(listItems, on_done, sublime.MONOSPACE_FONT)
+      
 
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
