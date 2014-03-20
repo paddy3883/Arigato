@@ -234,7 +234,7 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
                             return
         
         def on_done(i):
-            newView = window.open_file(matchingLines[i].filePath)
+            newView = window.open_file(matchingLines[i].filePath + ':' + str(matchingLines[i].lineNumber - 1), sublime.ENCODED_POSITION)
             window.focus_view(newView)
             pt = newView.text_point(matchingLines[i].lineNumber-1, 0)
             newView.sel().clear()
