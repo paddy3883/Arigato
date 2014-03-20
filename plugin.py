@@ -229,7 +229,7 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
                                             matchingLines.append(matchingLine)
                                             listItems.append(matchingLine.fileName + ': #' + str(matchingLine.lineNumber) + ' - '+ matchingLine.lineText)
                                     except Exception as exp:
-                                        print('Issue in file ' +str(f) + ' line number ' + lineNumber + ': ' +exp.message)
+                                        print('Issue in file ' +str(f) + ' line number ' + str(lineNumber) + ': ' +exp.message)
                         except IOError as e:
                             return
         
@@ -323,7 +323,7 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
                                                 output_target.append_text('Line ' +str(lineNumber) + ' - Replacing ' + aLine.strip() + '\n\n')
                                                 replaceCount = replaceCount+1
                                     except Exception as exp:
-                                        print('Issue in file ' +str(f) + ' line number ' + lineNumber + ': ' +exp.message)
+                                        print('Issue in file ' +str(f) + ' line number ' + str(lineNumber) + ': ' +exp.message)
                         except IOError as e:
                             return
                     
