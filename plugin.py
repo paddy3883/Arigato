@@ -265,21 +265,87 @@ class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
 class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, oldKeyword, newKeyword):
-        sublime.error_message('Replace with ' + oldKeyword + ' with ' +newKeyword)
-        ## Convert from 1 based to a 0 based line number
-        #line = int(line) - 1
+        
+        
+        window = sublime.active_window()
+        
+        output_target = OutputTarget(window,window.folders()[0])
+        if output_target is not None:
+            output_target.append_text('Doing replace')
+        sublime.error_message('step2')
+        for folder in window.folders():
+            sublime.error_message('step2b')
+            for root, dirs, files in os.walk(folder):
+                sublime.error_message('step2c')
+                for f in files:
+                    sublime.error_message('step2d')
+                    if f.endswith('.txt') and f != '__init__.txt':
+                        path = os.path.join(root, f)
+                        try:
+                            with open(path, 'rb') as openFile:
+                                lines = openFile.readlines()
+                                lineNumber = 0 
+                                for aLine in lines:
+                                    lineNumber = lineNumber + 1
+                                    if keyword in aLine:
+                                        #matchingKeyword= MatchingFile(aLine.strip(),str(f),path, lineNumber)
+                                        if output_target is not None:
+                                            output_target.append_text('Replacing ' + aLine.strip() + ' in ' + str(f))
+                                        #matchingKeywords.append(matchingKeyword)
+                                        #listKeywords.append(matchingKeyword.fileName + ': #' + str(matchingKeyword.lineNumber) + ' - '+ matchingKeyword.lineText)
+                        except IOError as e:
+                            return
+    
 
-        ## Negative line numbers count from the end of the buffer
-        #if line < 0:
-        #    lines, _ = self.view.rowcol(self.view.size())
-        #    line = lines + line + 1
+class RightClickCommand(sublime_plugin.TextCommand):
+	def run_(self, args):
+		self.view.run_command("context_menu", args)
+        #self.view.run_command("move_to", {"to":"bof"})
+        
+        #sel = self.view.sel()[0]
+        #line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+        #row, col = view.rowcol(sel.begin())
 
-        #pt = self.view.text_point(line, 0)
 
-        #self.view.sel().clear()
-        #self.view.sel().add(sublime.Region(pt))
+        
 
-        #self.view.show(pt)
+class DragSelectCallbackCommand(sublime_plugin.TextCommand):
+	def run_(self, args):                
+		for c in sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down',[]):
+			c.on_pre_mouse_down(args)
+
+        #We have to make a copy of the selection, otherwise we'll just have
+		#a *reference* to the selection which is useless if we're trying to
+		#roll back to a previous one. A RegionSet doesn't support slicing so
+		#we have a comprehension instead.
+		old_sel = [r for r in self.view.sel()]
+
+		#Only send the event so we don't do an extend or subtract or
+		#whatever. We want the only selection to be where they clicked.
+		self.view.run_command("drag_select", {'event': args['event']})
+		new_sel = self.view.sel()
+		click_point = new_sel[0].a
+
+		#Restore the old selection so when we call drag_select it will
+		#behave normally.
+		new_sel.clear()
+		map(new_sel.add, old_sel)
+
+		#This is the "real" drag_select that alters the selection for real.
+		self.view.run_command("drag_select", args)
+
+		for c in sublime_plugin.all_callbacks.setdefault('on_post_mouse_down',[]):
+			c.on_post_mouse_down(click_point)
+
+class MouseEventListener(sublime_plugin.EventListener):
+	#If we add the callback names to the list of all callbacks, Sublime
+	#Text will automatically search for them in future imported classes.
+	#You don't actually *need* to inherit from MouseEventListener, but
+	#doing so forces you to import this file and therefore forces Sublime
+	#to add these to its callback list.
+	sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down', [])
+	sublime_plugin.all_callbacks.setdefault('on_post_mouse_down', [])
+
 
 
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
@@ -352,18 +418,13 @@ class OutputTarget():
         self.console.set_scratch(True)
         self.console.set_read_only(True)
 
-    def append_text(self, output):
-
-        console = self.console
-
-        console.set_read_only(False)
         edit = console.begin_edit()
-        console.insert(edit, console.size(), output)
-        console.end_edit(edit)
-        console.set_read_only(True)
 
     def set_status(self, tag, message):
 
+        console.insert(edit, console.size(), output)
+        console.end_edit(edit)
+        console.set_read_only(True)
         self.console.set_status(tag, message)
 
 def process(command, callback, working_dir, results_dir):
