@@ -37,40 +37,98 @@ views_to_center = {}
 stdlib_keywords.load(plugin_dir)
 
 class CompleteVariableCommand(sublime_plugin.TextCommand):
+    
     matching_variables = []
+    def __init__(self, view):
+        self.view = view
+        self.window = sublime.active_window()
+        self.folders= self.view.window().folders()
+        for folder in self.folders:
+            print ('searching folders') 
+            for root, dirs, files in os.walk(folder):
+                for f in files:
+                    if f.endswith('.txt') and f != '__init__.txt':
+                        path = os.path.join(root, f) 
+                        self.search_file(path)
+                        print ('searching files')  
 
     def run(self, edit):
         view = self.view
-
-        # test data for demo. the list would be populated using already-written folder search function at bottom of this class which would be pre-populated on load
-        self.list = ["WorkingFolderVariable", "HomeworkFolderbbc", "FileNameVariable", "HomeworkFileName", "PathToVariable", "PathToHomeworkVariable", "CountFiles", "CountHtmlLogFiles", "CountHtmlReportFiles"]
-
         window = sublime.active_window()
-        window.show_quick_panel(self.list, self.on_done)
+        window.show_quick_panel(self.matching_variables, self.on_done)
         self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"${"}})
         self.curPos = self.view.sel()[0].begin()
 
+    def search_file(self, path):
+            robotfile=open(path, 'r')        
+            for line in robotfile:
+                print ('searching file line : ' + line)
+                # search if line contains string
+                pattern = '\s*\\$\\{\w+\\}'
+                p = re.compile(pattern)
+                m = p.match(line)
+                if m:
+                    print ('Match found: ', m.group())
+                    print ('Match found group zero: ', m.group(0))
+                    itemfound=m.group(0).strip()
+                    for char in '${}':
+                        itemfound=itemfound.replace(char,'')  
+                    if itemfound not in self.matching_variables:
+                        self.matching_variables.append(itemfound)
+                else:
+                    print 'No match'
+
     def on_done(self, index):
         if index == -1:
             return           
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list[index]+"}    "}})
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.matching_variables[index]+"}    "}})
 
 class CompleteListCommand(sublime_plugin.TextCommand):
+    
+    list_variables = []
+    def __init__(self, view):
+        self.view = view
+        self.window = sublime.active_window()
+        self.folders= self.view.window().folders()
+        for folder in self.folders:
+            print ('searching folders') 
+            for root, dirs, files in os.walk(folder):
+                for f in files:
+                    if f.endswith('.txt') and f != '__init__.txt':
+                        path = os.path.join(root, f) 
+                        self.search_list_variables(path)
+                        print ('searching files')  
+
     def run(self, edit):
         view = self.view
-
-        # test data for demo. the list would be populated using already-written folder search function at bottom of this class which would be pre-populated on load
-        self.list = ["CounterList", "PathList", "FilesList", "SearchFiles"]
-
         window = sublime.active_window()
-        window.show_quick_panel(self.list, self.on_done)
+        window.show_quick_panel(self.list_variables, self.on_done)
         self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"@{"}})
         self.curPos = self.view.sel()[0].begin()
 
+    def search_list_variables(self, path):
+            robotfile=open(path, 'r')        
+            for line in robotfile:
+                print ('searching file line : ' + line)
+                # search if line contains string
+                pattern = '\s*@\\{\w+\\}'
+                p = re.compile(pattern)
+                m = p.match(line)
+                if m:
+                    print ('Match found: ', m.group())
+                    print ('Match found group zero: ', m.group(0))
+                    itemfound=m.group(0).strip()
+                    for char in '@{}':
+                        itemfound=itemfound.replace(char,'')  
+                    if itemfound not in self.list_variables:
+                        self.list_variables.append(itemfound)
+                else:
+                    print 'No match'
+
     def on_done(self, index):
         if index == -1:
             return           
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list[index]+"}    "}})
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list_variables[index]+"}    "}})
 
 class InsertMyText(sublime_plugin.TextCommand):
     def run(self, edit, args):
@@ -635,111 +693,6 @@ class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
 
         current_folder = sublime.active_window().folders()[0]
         sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
-
-#code to populate variables from folders
-class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
-    
-    matching_list_variables = []
-    
-
-    def run(self, edit):
-        view = self.view
-        
-        if not is_robot_format(view):
-            return
-        
-        file_path = view.file_name()        
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return 
-        
-        window = sublime.active_window()
-        folders = view.window().folders()
-        
-        for folder in folders:
-            print ('searching folders') 
-            for root, dirs, files in os.walk(folder):
-                for f in files:
-                    if f.endswith('.txt') and f != '__init__.txt':
-                        path = os.path.join(root, f) 
-                        self.search_list_variables(path)
-                        print ('searching files')         
-                    
-        window.run_command("hide_overlay")
-        self.matching_list_variables.append('stringitems')
-
-        window.show_quick_panel(self.matching_list_variables, None)
-        
-                        
-    def search_list_variables(self, path):
-            robotfile=open(path, 'r')        
-            for line in robotfile:
-                print ('searching file line : ' + line)
-                # search if line contains string
-                pattern = '^@\\{\w+\\}'
-                p = re.compile(pattern)
-                m = p.match(line)
-                if m:
-                    print ('Match found: ', m.group())
-                    print ('Match found group zero: ', m.group(0))
-                    itemfound=m.group(0)
-                    for char in '${}':
-                        itemfound=itemfound.replace(char,'')  
-                    if itemfound not in self.matching_list_variables:
-                        self.matching_list_variables.append(itemfound)
-                else:
-                    print 'No match'
-
-#code to populate variables from folders
-class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
-    
-   matching_variables = []
- 
-   def run(self, edit):
-        view = self.view 
-        if not is_robot_format(view):
-            return
-        
-        file_path = view.file_name()        
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return 
-
-        window = sublime.active_window()
-        folders = view.window().folders()
-        
-        for folder in folders:
-            print ('searching folders') 
-            for root, dirs, files in os.walk(folder):
-                for f in files:
-                    if f.endswith('.txt') and f != '__init__.txt':
-                        path = os.path.join(root, f) 
-                        self.search_file(path)
-                        print ('searching files')         
-        
-        window = sublime.active_window()
-        window.run_command("hide_overlay")
-        window.show_quick_panel(self.matching_variables, None)
-                        
-   def search_file(self, path):
-            robotfile=open(path, 'r')        
-            for line in robotfile:
-                print ('searching file line : ' + line)
-                # search if line contains string
-                pattern = '^\\$\\{\w+\\}'
-                p = re.compile(pattern)
-                m = p.match(line)
-                if m:
-                    print ('Match found: ', m.group())
-                    print ('Match found group zero: ', m.group(0))
-                    itemfound=m.group(0)
-                    for char in '${}':
-                        itemfound=itemfound.replace(char,'')  
-                    if itemfound not in self.matching_variables:
-                        self.matching_variables.append(itemfound)
-                else:
-                    print 'No match'									
-
 
 
 
