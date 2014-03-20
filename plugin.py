@@ -267,7 +267,7 @@ class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
 
 class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 
-    def replace(file_path, pattern, subst):
+    def replace(self, file_path, pattern, subst):
         #Create temp file
         fh, abs_path = mkstemp()
         new_file = open(abs_path,'w')
@@ -310,19 +310,21 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
                                 lineNumber = 0 
                                 for aLine in lines:
                                     lineNumber = lineNumber + 1
-                                    if oldKeyword in str(aLine):
-                                        #matchingKeyword= MatchingFile(aLine.strip(),str(f),path, lineNumber)
-                                        if output_target is not None:
-                                            if firstReplace == 1:
-                                                output_target.append_text('In file \''+str(f) +'\'\n')
-                                                firstReplace = 0
-                                            output_target.append_text('Line ' +str(lineNumber) + ' - Replacing ' + aLine.strip() + '\n\n')
-                                            replaceCount = replaceCount+1
-                                            #matchingKeywords.append(matchingKeyword)
-                                        #listKeywords.append(matchingKeyword.fileName + ': #' + str(matchingKeyword.lineNumber) + ' - '+ matchingKeyword.lineText)
+                                    try:
+                                        if oldKeyword in str(aLine):
+                                            #matchingKeyword= MatchingFile(aLine.strip(),str(f),path, lineNumber)
+                                            if output_target is not None:
+                                                if firstReplace == 1:
+                                                    output_target.append_text('In file \''+str(f) +'\'\n')
+                                                    firstReplace = 0
+                                                output_target.append_text('Line ' +str(lineNumber) + ' - Replacing ' + aLine.strip() + '\n\n')
+                                                replaceCount = replaceCount+1
+                                    except Exception as exp:
+                                        print('Issue in file ' +str(f) + ' line number ' + lineNumber + ': ' +exp.message)
                         except IOError as e:
                             return
                     
+                        self.replace(path, oldKeyword, newKeyword)
                               
         if replaceCount>0:
             if output_target is not None:
