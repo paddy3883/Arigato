@@ -599,6 +599,7 @@ class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
 class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
     
     matching_list_variables = []
+    
 
     def run(self, edit):
         view = self.view
@@ -623,11 +624,10 @@ class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
                         self.search_list_variables(path)
                         print ('searching files')         
                     
-        
         window.run_command("hide_overlay")
-        # window.show_quick_panel(self.matching_list_variables, None)
-        temp = ["1", "2", "3", "4"]
-        window.show_quick_panel(temp, None)
+        self.matching_list_variables.append('stringitems')
+        self.matching_list_variables.append('dataserviceitems')
+        window.show_quick_panel(self.matching_list_variables, None)
         
                         
     def search_list_variables(self, path):
@@ -641,17 +641,19 @@ class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
                 if m:
                     print ('Match found: ', m.group())
                     print ('Match found group zero: ', m.group(0))
-                    self.matching_list_variables.append(m.group(0))
+                    itemfound=m.group(0)
+                    for char in '${}':
+                        itemfound=itemfound.replace(char,'')  
+                    self.matching_list_variables.append(itemfound)
                 else:
                     print 'No match'
 
 class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
     
    matching_variables = []
-   
+ 
    def run(self, edit):
-        view = self.view
-        
+        view = self.view 
         if not is_robot_format(view):
             return
         
@@ -659,22 +661,20 @@ class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
         if not file_path:
             sublime.error_message('Please save the buffer to a file first.')
             return 
-        
+
         window = sublime.active_window()
         folders = view.window().folders()
         
         for folder in folders:
             print ('searching folders') 
-            
             for root, dirs, files in os.walk(folder):
                 for f in files:
                     if f.endswith('.txt') and f != '__init__.txt':
                         path = os.path.join(root, f) 
                         self.search_file(path)
                         print ('searching files')         
-              
-        # temp = ["1", "2", "3", "4"]
-        # window.show_quick_panel(temp, None)
+        
+        window = sublime.active_window()
         window.run_command("hide_overlay")
         window.show_quick_panel(self.matching_variables, None)
                         
@@ -689,7 +689,15 @@ class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
                 if m:
                     print ('Match found: ', m.group())
                     print ('Match found group zero: ', m.group(0))
-                    self.matching_variables.append(m.group(0))
+                    itemfound=m.group(0)
+                    for char in '${}':
+                        itemfound=itemfound.replace(char,'')  
+                    self.matching_variables.append(itemfound)
                 else:
-                    print 'No match'
+                    print 'No match'					
+					
+
+
+
+
 
