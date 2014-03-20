@@ -29,6 +29,9 @@ import webbrowser
 
 from os.path import dirname, realpath
 
+from tempfile import mkstemp
+from shutil import move
+from os import remove, close
 views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
@@ -264,6 +267,22 @@ class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
 
 class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 
+    def replace(file_path, pattern, subst):
+        #Create temp file
+        fh, abs_path = mkstemp()
+        new_file = open(abs_path,'w')
+        old_file = open(file_path)
+        for line in old_file:
+            new_file.write(line.replace(pattern, subst))
+        #close temp file
+        new_file.close()
+        close(fh)
+        old_file.close()
+        #Remove original file
+        remove(file_path)
+        #Move new file
+        move(abs_path, file_path)
+
     def run(self, edit, oldKeyword, newKeyword):
                 
         window = sublime.active_window()
@@ -281,17 +300,17 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
             for root, dirs, files in os.walk(folder):
                 #sublime.error_message('step2c')
                 for f in files:
+                    firstReplace = 1
                     #sublime.error_message('step2d')
                     if f.endswith('.txt') and f != '__init__.txt':
                         path = os.path.join(root, f)
                         try:
                             with open(path, 'rb') as openFile:
-                                firstReplace = 1
                                 lines = openFile.readlines()
                                 lineNumber = 0 
                                 for aLine in lines:
                                     lineNumber = lineNumber + 1
-                                    if oldKeyword in aLine:
+                                    if oldKeyword in str(aLine):
                                         #matchingKeyword= MatchingFile(aLine.strip(),str(f),path, lineNumber)
                                         if output_target is not None:
                                             if firstReplace == 1:
@@ -303,7 +322,7 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
                                         #listKeywords.append(matchingKeyword.fileName + ': #' + str(matchingKeyword.lineNumber) + ' - '+ matchingKeyword.lineText)
                         except IOError as e:
                             return
-      
+                          
         if replaceCount>0:
             if output_target is not None:
                     output_target.append_text('\nTotal ' + str(replaceCount) + ' occurrences replaced')
