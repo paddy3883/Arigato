@@ -16,7 +16,7 @@
 			<key>match</key>
 			<string>\b(FAIL)\b</string>
 			<key>name</key>
-			<string>entity.name.class</string>
+			<string>invalid.illegal</string>
 		</dict>
 		<dict>
 			<key>match</key>
@@ -36,7 +36,23 @@
 			<key>name</key>
 			<string>constant.numeric.robot</string>
 		</dict>
-	</array>
+    <dict>
+      <key>begin</key>
+      <string>Test execution is complete and all tests passed</string>
+      <key>end</key>
+      <string>$</string>
+      <key>name</key>
+      <string>string.robot.header</string>
+    </dict>
+    <dict>
+      <key>begin</key>
+      <string>Test execution is complete, but there are test failures</string>
+      <key>end</key>
+      <string>$</string>
+      <key>name</key>
+      <string>keyword</string>
+    </dict>
+  </array>
 	<key>scopeName</key>
 	<string>text.robot</string>
 	<key>uuid</key>
