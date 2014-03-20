@@ -36,6 +36,46 @@ views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
 
+class CompleteVariableCommand(sublime_plugin.TextCommand):
+    matching_variables = []
+
+    def run(self, edit):
+        view = self.view
+
+        # test data for demo. the list would be populated using already-written folder search function at bottom of this class which would be pre-populated on load
+        self.list = ["WorkingFolderVariable", "HomeworkFolderbbc", "FileNameVariable", "HomeworkFileName", "PathToVariable", "PathToHomeworkVariable", "CountFiles", "CountHtmlLogFiles", "CountHtmlReportFiles"]
+
+        window = sublime.active_window()
+        window.show_quick_panel(self.list, self.on_done)
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"${"}})
+        self.curPos = self.view.sel()[0].begin()
+
+    def on_done(self, index):
+        if index == -1:
+            return           
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list[index]+"}    "}})
+
+class CompleteListCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        # test data for demo. the list would be populated using already-written folder search function at bottom of this class which would be pre-populated on load
+        self.list = ["CounterList", "PathList", "FilesList", "SearchFiles"]
+
+        window = sublime.active_window()
+        window.show_quick_panel(self.list, self.on_done)
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"@{"}})
+        self.curPos = self.view.sel()[0].begin()
+
+    def on_done(self, index):
+        if index == -1:
+            return           
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list[index]+"}    "}})
+
+class InsertMyText(sublime_plugin.TextCommand):
+    def run(self, edit, args):
+        self.view.insert(edit, args['startPos'], args['text'])
+
 
 #TODO: move this into robot_run.py
 class RobotTestSuite(object):
@@ -596,6 +636,7 @@ class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
         current_folder = sublime.active_window().folders()[0]
         sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
 
+#code to populate variables from folders
 class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
     
     matching_list_variables = []
@@ -648,6 +689,7 @@ class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
                 else:
                     print 'No match'
 
+#code to populate variables from folders
 class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
     
    matching_variables = []
