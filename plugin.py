@@ -265,37 +265,49 @@ class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
 class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, oldKeyword, newKeyword):
-        
-        
+                
         window = sublime.active_window()
         
-        output_target = OutputTarget(window,window.folders()[0])
+        output_target = OutputTarget(window,window.folders()[0], '*Find/Replace*')
         if output_target is not None:
-            output_target.append_text('Doing replace')
-        sublime.error_message('step2')
+            output_target.append_text('**************************************************************************************************************************\n')
+            output_target.append_text('Commencing replace of \''+oldKeyword + ' with \'' +newKeyword +'\'\n')
+            output_target.append_text('**************************************************************************************************************************\n\n\n')
+        
+        replaceCount = 0
+
         for folder in window.folders():
-            sublime.error_message('step2b')
+            #sublime.error_message('step2b')
             for root, dirs, files in os.walk(folder):
-                sublime.error_message('step2c')
+                #sublime.error_message('step2c')
                 for f in files:
-                    sublime.error_message('step2d')
+                    #sublime.error_message('step2d')
                     if f.endswith('.txt') and f != '__init__.txt':
                         path = os.path.join(root, f)
                         try:
                             with open(path, 'rb') as openFile:
+                                firstReplace = 1
                                 lines = openFile.readlines()
                                 lineNumber = 0 
                                 for aLine in lines:
                                     lineNumber = lineNumber + 1
-                                    if keyword in aLine:
+                                    if oldKeyword in aLine:
                                         #matchingKeyword= MatchingFile(aLine.strip(),str(f),path, lineNumber)
                                         if output_target is not None:
-                                            output_target.append_text('Replacing ' + aLine.strip() + ' in ' + str(f))
-                                        #matchingKeywords.append(matchingKeyword)
+                                            if firstReplace == 1:
+                                                output_target.append_text('In file \''+str(f) +'\'\n')
+                                                firstReplace = 0
+                                            output_target.append_text('Line ' +str(lineNumber) + ' - Replacing ' + aLine.strip() + '\n\n')
+                                            replaceCount = replaceCount+1
+                                            #matchingKeywords.append(matchingKeyword)
                                         #listKeywords.append(matchingKeyword.fileName + ': #' + str(matchingKeyword.lineNumber) + ' - '+ matchingKeyword.lineText)
                         except IOError as e:
                             return
-    
+      
+        if replaceCount>0:
+            if output_target is not None:
+                    output_target.append_text('\nTotal ' + str(replaceCount) + ' occurrences replaced')
+                                       
 
 class RightClickCommand(sublime_plugin.TextCommand):
 	def run_(self, args):
@@ -410,10 +422,10 @@ class AutoComplete(sublime_plugin.EventListener):
             return user_keywords
 
 class OutputTarget():
-    def __init__(self, window, working_dir):
+    def __init__(self, window, working_dir, name):
 
         self.console = window.new_file()
-        self.console.set_name('*Output*')
+        self.console.set_name(name)
 
         self.console.set_scratch(True)
         self.console.set_read_only(True)
@@ -536,7 +548,7 @@ class Test():
             self.variable_line += '--variable ' + variable + ' '
 
     def run_test_suite(self):
-        output_target = OutputTarget(self.view.window(), self.root_folder)
+        output_target = OutputTarget(self.view.window(), self.root_folder, '*Output*')
 
         def _C(output):
             if output is not None:
@@ -545,7 +557,7 @@ class Test():
         process('pybot --outputdir ' + self.results_dir + self.variable_line + '--suite ' + self.suite_name + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
 
     def run_test_case(self, test_case):
-        output_target = OutputTarget(self.view.window(), self.root_folder)
+        output_target = OutputTarget(self.view.window(), self.root_folder, '*Output*')
 
         def _C(output):
             if output is not None:
