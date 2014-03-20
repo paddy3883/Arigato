@@ -1,0 +1,11 @@
+<snippet>
+        <content><![CDATA[
+Import Library    HttpLibrary.HTTP
+
+]]></content>
+        <!-- how to trigger the snippet -->
+        <tabTrigger>*js</tabTrigger>
+        <!-- scope to limit where the snippet will trigger -->
+        <scope>text.robot</scope>
+        <description>Robot Framework Library JSON(HttpLibrary.HTTP)</description>
+</snippet>

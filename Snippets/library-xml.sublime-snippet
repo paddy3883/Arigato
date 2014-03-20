@@ -1,0 +1,11 @@
+<snippet>
+        <content><![CDATA[
+Import Library    XML
+
+]]></content>
+        <!-- how to trigger the snippet -->
+        <tabTrigger>*x</tabTrigger>
+        <!-- scope to limit where the snippet will trigger -->
+        <scope>text.robot</scope>
+        <description>Robot Framework Library XML</description>
+</snippet>
