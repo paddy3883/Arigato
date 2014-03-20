@@ -223,7 +223,7 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
                                 lineNumber = 0 
                                 for aLine in lines:
                                     lineNumber = lineNumber + 1
-                                    if keyword in aLine:
+                                    if keyword in str(aLine):
                                         matchingLine= MatchingFile(aLine.strip(),str(f),path, lineNumber)
                                         matchingLines.append(matchingLine)
                                         listItems.append(matchingLine.fileName + ': #' + str(matchingLine.lineNumber) + ' - '+ matchingLine.lineText)
@@ -322,7 +322,8 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
                                         #listKeywords.append(matchingKeyword.fileName + ': #' + str(matchingKeyword.lineNumber) + ' - '+ matchingKeyword.lineText)
                         except IOError as e:
                             return
-                          
+                    
+                              
         if replaceCount>0:
             if output_target is not None:
                     output_target.append_text('\nTotal ' + str(replaceCount) + ' occurrences replaced')
