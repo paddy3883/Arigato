@@ -417,14 +417,20 @@ class OutputTarget():
 
         self.console.set_scratch(True)
         self.console.set_read_only(True)
+        self.console.set_syntax_file(os.path.join(plugin_dir, 'robot-output.tmLanguage'))
 
+    def append_text(self, output):
+
+        console = self.console
+
+        console.set_read_only(False)
         edit = console.begin_edit()
-
-    def set_status(self, tag, message):
-
         console.insert(edit, console.size(), output)
         console.end_edit(edit)
         console.set_read_only(True)
+
+    def set_status(self, tag, message):
+
         self.console.set_status(tag, message)
 
 def process(command, callback, working_dir, results_dir):
@@ -546,4 +552,107 @@ class Test():
                 output_target.append_text(output)
 
         process('pybot --outputdir ' + self.results_dir + self.variable_line + '--test ' + test_case + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
+
+class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
+    def run(self):
+
+        current_folder = sublime.active_window().folders()[0]
+        sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
+
+class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
+    
+    matching_list_variables = []
+
+    def run(self, edit):
+        view = self.view
+        
+        if not is_robot_format(view):
+            return
+        
+        file_path = view.file_name()        
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return 
+        
+        window = sublime.active_window()
+        folders = view.window().folders()
+        
+        for folder in folders:
+            print ('searching folders') 
+            for root, dirs, files in os.walk(folder):
+                for f in files:
+                    if f.endswith('.txt') and f != '__init__.txt':
+                        path = os.path.join(root, f) 
+                        self.search_list_variables(path)
+                        print ('searching files')         
+                    
+        
+        window.run_command("hide_overlay")
+        # window.show_quick_panel(self.matching_list_variables, None)
+        temp = ["1", "2", "3", "4"]
+        window.show_quick_panel(temp, None)
+        
+                        
+    def search_list_variables(self, path):
+            robotfile=open(path, 'r')        
+            for line in robotfile:
+                print ('searching file line : ' + line)
+                # search if line contains string
+                pattern = '^\\@\\{\w+\\}'
+                p = re.compile(pattern)
+                m = p.match(line)
+                if m:
+                    print ('Match found: ', m.group())
+                    print ('Match found group zero: ', m.group(0))
+                    self.matching_list_variables.append(m.group(0))
+                else:
+                    print 'No match'
+
+class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
+    
+   matching_variables = []
+   
+   def run(self, edit):
+        view = self.view
+        
+        if not is_robot_format(view):
+            return
+        
+        file_path = view.file_name()        
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return 
+        
+        window = sublime.active_window()
+        folders = view.window().folders()
+        
+        for folder in folders:
+            print ('searching folders') 
+            
+            for root, dirs, files in os.walk(folder):
+                for f in files:
+                    if f.endswith('.txt') and f != '__init__.txt':
+                        path = os.path.join(root, f) 
+                        self.search_file(path)
+                        print ('searching files')         
+              
+        # temp = ["1", "2", "3", "4"]
+        # window.show_quick_panel(temp, None)
+        window.run_command("hide_overlay")
+        window.show_quick_panel(self.matching_variables, None)
+                        
+   def search_file(self, path):
+            robotfile=open(path, 'r')        
+            for line in robotfile:
+                print ('searching file line : ' + line)
+                # search if line contains string
+                pattern = '^\\$\\{\w+\\}'
+                p = re.compile(pattern)
+                m = p.match(line)
+                if m:
+                    print ('Match found: ', m.group())
+                    print ('Match found group zero: ', m.group(0))
+                    self.matching_variables.append(m.group(0))
+                else:
+                    print 'No match'
 

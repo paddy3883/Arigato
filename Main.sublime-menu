@@ -113,6 +113,10 @@
                                 "caption": "Mouse Bindings - User"
                             },
                             { "caption": "-" }
+							, { 
+								"caption": "Run options", 
+								"command": "robot_run_options" 
+							}
                         ]
                     }
                 ]
