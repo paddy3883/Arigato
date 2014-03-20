@@ -223,10 +223,13 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
                                 lineNumber = 0 
                                 for aLine in lines:
                                     lineNumber = lineNumber + 1
-                                    if keyword in str(aLine):
-                                        matchingLine= MatchingFile(aLine.strip(),str(f),path, lineNumber)
-                                        matchingLines.append(matchingLine)
-                                        listItems.append(matchingLine.fileName + ': #' + str(matchingLine.lineNumber) + ' - '+ matchingLine.lineText)
+                                    try:
+                                        if keyword in str(aLine):
+                                            matchingLine= MatchingFile(aLine.strip(),str(f),path, lineNumber)
+                                            matchingLines.append(matchingLine)
+                                            listItems.append(matchingLine.fileName + ': #' + str(matchingLine.lineNumber) + ' - '+ matchingLine.lineText)
+                                    except Exception as exp:
+                                        print('Issue in file ' +str(f) + ' line number ' + lineNumber + ': ' +exp.message)
                         except IOError as e:
                             return
         
