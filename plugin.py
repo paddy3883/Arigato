@@ -626,7 +626,7 @@ class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
                     
         window.run_command("hide_overlay")
         self.matching_list_variables.append('stringitems')
-        self.matching_list_variables.append('dataserviceitems')
+
         window.show_quick_panel(self.matching_list_variables, None)
         
                         
@@ -635,7 +635,7 @@ class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
             for line in robotfile:
                 print ('searching file line : ' + line)
                 # search if line contains string
-                pattern = '^\\@\\{\w+\\}'
+                pattern = '^@\\{\w+\\}'
                 p = re.compile(pattern)
                 m = p.match(line)
                 if m:
@@ -644,7 +644,8 @@ class RobotCompleteListVariableCommand(sublime_plugin.TextCommand):
                     itemfound=m.group(0)
                     for char in '${}':
                         itemfound=itemfound.replace(char,'')  
-                    self.matching_list_variables.append(itemfound)
+                    if itemfound not in self.matching_list_variables:
+                        self.matching_list_variables.append(itemfound)
                 else:
                     print 'No match'
 
@@ -692,10 +693,10 @@ class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
                     itemfound=m.group(0)
                     for char in '${}':
                         itemfound=itemfound.replace(char,'')  
-                    self.matching_variables.append(itemfound)
+                    if itemfound not in self.matching_variables:
+                        self.matching_variables.append(itemfound)
                 else:
-                    print 'No match'					
-					
+                    print 'No match'									
 
 
 
