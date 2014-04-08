@@ -15,6 +15,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
+    <Compile Include="lib\stdlib_variables.py" />
     <Compile Include="plugin.py" />
     <Compile Include="lib\keyword_parse.py" />
     <Compile Include="lib\robot_run.py" />

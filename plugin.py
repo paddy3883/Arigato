@@ -38,7 +38,7 @@ stdlib_keywords.load(plugin_dir)
 
 class CompleteVariableCommand(sublime_plugin.TextCommand):
     
-    matching_variables = []
+    dollar_variables = []
     def __init__(self, view):
         self.view = view
         self.window = sublime.active_window()
@@ -49,39 +49,37 @@ class CompleteVariableCommand(sublime_plugin.TextCommand):
                 for f in files:
                     if f.endswith('.txt') and f != '__init__.txt':
                         path = os.path.join(root, f) 
-                        self.search_file(path)
+                        self.search_variables(path)
                         print ('searching files')  
 
     def run(self, edit):
         view = self.view
         window = sublime.active_window()
-        window.show_quick_panel(self.matching_variables, self.on_done)
+        window.show_quick_panel(self.dollar_variables, self.on_done)
         self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"${"}})
         self.curPos = self.view.sel()[0].begin()
 
-    def search_file(self, path):
-            robotfile=open(path, 'r')        
-            for line in robotfile:
-                print ('searching file line : ' + line)
-                # search if line contains string
-                pattern = '\s*\\$\\{\w+\\}'
-                p = re.compile(pattern)
-                m = p.match(line)
-                if m:
-                    print ('Match found: ', m.group())
-                    print ('Match found group zero: ', m.group(0))
-                    itemfound=m.group(0).strip()
-                    for char in '${}':
-                        itemfound=itemfound.replace(char,'')  
-                    if itemfound not in self.matching_variables:
-                        self.matching_variables.append(itemfound)
-                else:
-                    print 'No match'
+    def search_variables(self, path):        
+        pattern = '\s*\\$\\{\w+\\}'
+        p = re.compile(pattern)
+        try:
+           with open(path, 'rb') as openFile:
+                lines = openFile.readlines()
+                for line in lines:
+                     # search if line contains string
+                     m = p.match(line)
+                     if m:
+                        itemfound=m.group(0).strip()
+                        itemfound = re.sub('[${}]', '', itemfound)
+                        if itemfound not in self.dollar_variables:
+                            self.dollar_variables.append(itemfound)
+        except IOError as e:
+           return
 
     def on_done(self, index):
         if index == -1:
             return           
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.matching_variables[index]+"}    "}})
+        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.dollar_variables[index]+"}    "}})
 
 class CompleteListCommand(sublime_plugin.TextCommand):
     
@@ -107,24 +105,22 @@ class CompleteListCommand(sublime_plugin.TextCommand):
         self.curPos = self.view.sel()[0].begin()
 
     def search_list_variables(self, path):
-            robotfile=open(path, 'r')        
-            for line in robotfile:
-                print ('searching file line : ' + line)
-                # search if line contains string
-                pattern = '\s*@\\{\w+\\}'
-                p = re.compile(pattern)
-                m = p.match(line)
-                if m:
-                    print ('Match found: ', m.group())
-                    print ('Match found group zero: ', m.group(0))
-                    itemfound=m.group(0).strip()
-                    for char in '@{}':
-                        itemfound=itemfound.replace(char,'')  
-                    if itemfound not in self.list_variables:
+        pattern = '\s*@\\{\w+\\}'
+        p = re.compile(pattern)
+        try:
+           with open(path, 'rb') as openFile:
+             lines = openFile.readlines()
+             for line in lines:
+                 # search if line contains string
+                 m = p.match(line)
+                 if m:
+                     itemfound=m.group(0).strip()
+                     itemfound = re.sub('[@{}]', '', itemfound)
+                     if itemfound not in self.list_variables:
                         self.list_variables.append(itemfound)
-                else:
-                    print 'No match'
-
+        except IOError as e:
+           return        
+           
     def on_done(self, index):
         if index == -1:
             return           
