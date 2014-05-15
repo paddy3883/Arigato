@@ -13,8 +13,8 @@ plugin_dir = os.getcwd()
 
 import threading
 import re
-
-import sublime, sublime_plugin
+import sublime
+import sublime_plugin
 import shlex
 import subprocess
 import select
@@ -32,6 +32,7 @@ from os.path import dirname, realpath
 from tempfile import mkstemp
 from shutil import move
 from os import remove, close
+
 views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
@@ -40,6 +41,10 @@ class CompleteVariableCommand(sublime_plugin.TextCommand):
     
     dollar_variables = []
     def __init__(self, view):
+        #initialize(view)
+        return
+
+    def initialize(self, view):
         self.view = view
         self.window = sublime.active_window()
         self.folders= self.view.window().folders()
@@ -85,6 +90,10 @@ class CompleteListCommand(sublime_plugin.TextCommand):
     
     list_variables = []
     def __init__(self, view):
+        #initialize(view)
+        return
+
+    def initialize(self, view):
         self.view = view
         self.window = sublime.active_window()
         self.folders= self.view.window().folders()
@@ -431,21 +440,19 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 class RightClickCommand(sublime_plugin.TextCommand):
 	def run_(self, args):
 		self.view.run_command("context_menu", args)
-        #self.view.run_command("move_to", {"to":"bof"})
-        
-        #sel = self.view.sel()[0]
-        #line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
-        #row, col = view.rowcol(sel.begin())
+#self.view.run_command("move_to", {"to":"bof"})
 
+#sel = self.view.sel()[0]
+#line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+#row, col = view.rowcol(sel.begin())
 
-        
 
 class DragSelectCallbackCommand(sublime_plugin.TextCommand):
 	def run_(self, args):                
 		for c in sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down',[]):
 			c.on_pre_mouse_down(args)
 
-        #We have to make a copy of the selection, otherwise we'll just have
+#We have to make a copy of the selection, otherwise we'll just have
 		#a *reference* to the selection which is useless if we're trying to
 		#roll back to a previous one. A RegionSet doesn't support slicing so
 		#we have a comprehension instead.
