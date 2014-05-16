@@ -55,7 +55,7 @@ class CompleteVariableCommand(sublime_plugin.TextCommand):
                     if f.endswith('.txt') and f != '__init__.txt':
                         path = os.path.join(root, f) 
                         self.search_variables(path)
-                        print ('searching files')  
+                        print ('searching files')
 
     def run(self, edit):
         view = self.view
@@ -155,7 +155,7 @@ class RobotTestSuite(object):
             return
         
         test = Test(self.view)
-        test.run_test_suite()
+        #test.run_test_suite()
 
         return True
 
@@ -183,7 +183,7 @@ class RobotTestCase(object):
         test_case = test_case.replace(" ", "").replace("\t", "")
 
         test = Test(self.view)
-        test.run_test_case(test_case)
+        #test.run_test_case(test_case)
 
         return True
 
@@ -245,6 +245,7 @@ class GoToKeywordThread(threading.Thread):
             return []
         return keywords[lower_name]
 
+# robot_run_test
 class RobotRunTestCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -255,7 +256,7 @@ class RobotRunTestCommand(sublime_plugin.TextCommand):
         test_case = RobotTestCase(view)
         test_case.execute()
 
-
+# robot_run_suite
 class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -266,7 +267,7 @@ class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
         test_suite = RobotTestSuite(view)
         test_suite.execute()
 
-
+# robot_run_panel
 class RobotRunPanelCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -345,8 +346,6 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
             newView.show(pt)
 
         window.show_quick_panel(listItems, on_done, sublime.MONOSPACE_FONT)
-      
-
 
 class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
     currentKeyword = None 
@@ -646,11 +645,19 @@ class Test():
         self.root_folder = view.window().folders()[0]
         self.suite_name = self.file_name.rstrip('.txt')
 
+        print (self.root_folder)
+        print (path)
+        print ("test suite name = " + self.suite_name)
+        os.path.relpath(path, self.root_folder)
+
         # Default values
         self.outputdir = 'TestResults'
         self.testsuites = 'testsuites'
-        self.variables = ["os_browser:gc", "environment_name:cp"]
+        self.variables = []
+        self.tags_to_exclude = []
+        self.tags_to_include = []
 
+        # load settings from settings file.
         settings_file_name = os.path.join(self.root_folder, 'robot.sublime-build')
 
         if os.path.isfile(settings_file_name):
@@ -664,39 +671,52 @@ class Test():
             if len(data["outputdir"]) > 0:
                 self.outputdir = data["outputdir"]
 
-            self.variables = data["variables"]
+            if len(data["variables"]) > 0:
+                self.variables = data["variables"]
+
+            if len(data["tags_to_exclude"]) > 0:
+                self.tags_to_exclude = data["tags_to_exclude"]
+
+            if len(data["tags_to_include"]) > 0:
+                self.tags_to_include = data["tags_to_include"]
 
         self.results_dir = os.path.join(self.root_folder, self.outputdir)
         self.testsuites = os.path.join(self.root_folder, self.testsuites)
         
+        # construct variables
         self.variable_line = ' '
         for variable in self.variables:
             self.variable_line += '--variable ' + variable + ' '
 
+        # construct excludes
+        self.exclude_tags = ' '
+        for exclude_tag in self.tags_to_exclude:
+            self.exclude_tags += '--exclude ' + exclude_tag + ' '
+
+        # construct includes
+        self.include_tags = ' '
+        for include_tag in self.tags_to_include:
+            self.include_tags += '--include ' + include_tag + ' '
+
     def run_test_suite(self):
-        output_target = OutputTarget(self.view.window(), self.root_folder, '*Output*')
-
-        def _C(output):
-            if output is not None:
-                output_target.append_text(output)
-
-        process('pybot --outputdir ' + self.results_dir + self.variable_line + '--suite ' + self.suite_name + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
+        run_test('--suite ' + self.suite_name)
 
     def run_test_case(self, test_case):
+        run_test('--test ' + test_case)
+
+    def run_test(self, selection):
         output_target = OutputTarget(self.view.window(), self.root_folder, '*Output*')
 
         def _C(output):
             if output is not None:
                 output_target.append_text(output)
 
-        process('pybot --outputdir ' + self.results_dir + self.variable_line + '--test ' + test_case + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
+        process('pybot --outputdir ' + self.results_dir + self.variable_line + self.exclude_tags + self.include_tags + selection + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
 
+# TODO: Not implemented yet.
 class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
     def run(self):
 
         current_folder = sublime.active_window().folders()[0]
         sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
-
-
-
 
