@@ -6,7 +6,7 @@ import sublime
 # This is the class that outputs test progress and results into a window
 #--------------------------------------------------------------------------
 class OutputWindow():
-    def __init__(self, window, name):
+    def __init__(self, window, plugin_dir, name):
 
         self.console = window.new_file()
         self.console.set_name(name)

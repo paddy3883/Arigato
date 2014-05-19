@@ -24,18 +24,16 @@ import subprocess
 import select
 import functools
 import json
+import webbrowser
+import shutil
+import tempfile
 
 from keyword_parse import get_keyword_at_pos
 from string_populator import populate_testcase_file
 from robot_scanner import Scanner, detect_robot_regex
+from robot_common import OutputWindow
 import stdlib_keywords
-import webbrowser
-
-from os.path import dirname, realpath
-
-from tempfile import mkstemp
-from shutil import move
-from os import remove, close
+import robot_run
 
 views_to_center = {}
 
@@ -321,25 +319,25 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 
     def replace(self, file_path, pattern, subst):
         #Create temp file
-        fh, abs_path = mkstemp()
+        fh, abs_path = tempfile.mkstemp()
         new_file = open(abs_path,'w')
         old_file = open(file_path)
         for line in old_file:
             new_file.write(line.replace(pattern, subst))
         #close temp file
         new_file.close()
-        close(fh)
+        os.close(fh)
         old_file.close()
         #Remove original file
-        remove(file_path)
+        os.remove(file_path)
         #Move new file
-        move(abs_path, file_path)
+        shutil.move(abs_path, file_path)
 
     def run(self, edit, oldKeyword, newKeyword):
                 
         window = sublime.active_window()
         
-        output_window = OutputWindow(window, '*Find/Replace*')
+        output_window = OutputWindow(window, plugin_dir, '*Find/Replace*')
         if output_window is not None:
             output_window.append_text('**************************************************************************************************************************\n')
             output_window.append_text('Commencing replace of \''+oldKeyword + ' with \'' +newKeyword +'\'\n')
@@ -630,9 +628,9 @@ class Test():
         # set default values for the run parameters.
         self.outputdir = 'TestResults'
         self.testsuites = 'testsuites'
-        self.variables = []
-        self.tags_to_exclude = []
-        self.tags_to_include = []
+        variables = []
+        tags_to_exclude = []
+        tags_to_include = []
 
         # load settings(testsuites name, output directory, variables, tags) from settings file.
         settings_file_name = os.path.join(self.robot_root_folder, 'robot.sublime-build')
@@ -652,13 +650,13 @@ class Test():
                     self.outputdir = data['outputdir']
 
                 if len(data['variables']) > 0:
-                    self.variables = data['variables']
+                    variables = data['variables']
 
                 if len(data['tags_to_exclude']) > 0:
-                    self.tags_to_exclude = data['tags_to_exclude']
+                    tags_to_exclude = data['tags_to_exclude']
 
                 if len(data['tags_to_include']) > 0:
-                    self.tags_to_include = data['tags_to_include']
+                    tags_to_include = data['tags_to_include']
 
             except:
                 sublime.error_message('Error reading: ' + settings_file_name)
@@ -680,7 +678,7 @@ class Test():
 
         # append variables together so that they can be appended to the pybot command
         self.variable_line = ''
-        for variable in self.variables:
+        for variable in variables:
             if whitespace_pattern.match(variable):
                 sublime.error_message('Variable: "' + variable + '" contains white-spaces and is not allowed!')
                 return
@@ -688,7 +686,7 @@ class Test():
 
         # append exclude tags together so that they can be appended to the pybot command
         self.exclude_tags = ''
-        for exclude_tag in self.tags_to_exclude:
+        for exclude_tag in tags_to_exclude:
             if whitespace_pattern.match(exclude_tag):
                 sublime.error_message('Tag: "' + exclude_tag + '" contains white-spaces and is not allowed!')
                 return
@@ -696,7 +694,7 @@ class Test():
 
         # append include tags together so that they can be appended to the pybot command
         self.include_tags = ''
-        for include_tag in self.tags_to_include:
+        for include_tag in tags_to_include:
             if whitespace_pattern.match(include_tag):
                 sublime.error_message('Tag: "' + include_tag + '" contains white-spaces and is not allowed!')
                 return
@@ -709,7 +707,14 @@ class Test():
         test_suite_path, test_suite_file_name = os.path.split(view.file_name())
         self.test_suite_name = test_suite_file_name.rstrip('.txt')
 
-        self.test_suite_name = (os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.') + '.' + self.test_suite_name).replace(' ', '')
+        print ('Test suite path = ' + test_suite_path)
+        print ('Test suites = ' + self.testsuites)
+        test_suite_path = os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.')
+
+        if not (test_suite_path == '.'):
+            self.test_suite_name = test_suite_path + '.' + self.test_suite_name
+
+        self.test_suite_name = self.test_suite_name.replace(' ', '')
         print ('Test suite name = ' + self.test_suite_name)
         self.initialized = True
 
@@ -717,7 +722,7 @@ class Test():
         if not self.initialized:
             return
 
-        output_window = OutputWindow(self.view.window(), '*Output*')
+        output_window = OutputWindow(self.view.window(), plugin_dir, '*Output*')
 
         def _C(output):
             if output is not None:
