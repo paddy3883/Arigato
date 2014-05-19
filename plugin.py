@@ -520,12 +520,10 @@ class AutoComplete(sublime_plugin.EventListener):
 #----------------------------------------------------------
 class RobotRunTestCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        view = self.view
-
-        if not is_robot_format(view):
+        if not is_robot_format(self.view):
             return
 
-        test_case = RobotTestCase(view)
+        test_case = RobotTestCase(self.view)
         test_case.execute()
 
 #----------------------------------------------------------
@@ -533,12 +531,10 @@ class RobotRunTestCommand(sublime_plugin.TextCommand):
 #----------------------------------------------------------
 class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        view = self.view
-
-        if not is_robot_format(view):
+        if not is_robot_format(self.view):
             return
 
-        test_suite = RobotTestSuite(view)
+        test_suite = RobotTestSuite(self.view)
         test_suite.execute()
 
 #----------------------------------------------------------
@@ -546,12 +542,10 @@ class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
 #----------------------------------------------------------
 class RobotRunPanelCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        view = self.view
-
-        if not is_robot_format(view):
+        if not is_robot_format(self.view):
             return
 
-        file_path = view.file_name()
+        file_path = self.view.file_name()
 
         if not file_path:
             sublime.error_message('Please save the buffer to a file first.')
@@ -579,8 +573,10 @@ class RobotTestSuite(object):
         self.view = view
 
     def execute(self):
-        view = self.view
         test = Test(self.view)
+
+        if not test.initialized:
+            return False
 
         test.run_test()
         return True
@@ -594,12 +590,14 @@ class RobotTestCase(object):
         self.view = view
 
     def execute(self):
-        view = self.view
         test = Test(self.view)
 
+        if not test.initialized:
+            return False
+
         #TODO: this returns the keyword at cursor position, but we need to get the keyword at mouse position.
-        sel = view.sel()[0]
-        test_case_name = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+        sel = self.view.sel()[0]
+        test_case_name = re.compile('\r|\n').split(self.view.substr(self.view.line(sel)))[0]
 
         #TODO: We can do few enhancements to this....
         # 1. Make sure the selected test case actually appears under ***Test Cases*** section.
@@ -610,6 +608,7 @@ class RobotTestCase(object):
 
         test_case_name = test_case_name.replace(' ', '').replace('\t', '')
         print ('Test case name = ' + test_case_name)
+
         test.run_test('--test ' + test_case_name)
 
         return True
@@ -620,6 +619,7 @@ class RobotTestCase(object):
 class Test():
 
     def __init__(self, view):
+        self.initialized = False
         self.view = view;
         self.robot_root_folder = view.window().folders()[0]
 
@@ -711,8 +711,12 @@ class Test():
 
         self.test_suite_name = (os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.') + '.' + self.test_suite_name).replace(' ', '')
         print ('Test suite name = ' + self.test_suite_name)
+        self.initialized = True
 
     def run_test(self, filter = ''):
+        if not self.initialized:
+            return
+
         output_window = OutputWindow(self.view.window(), '*Output*')
 
         def _C(output):
@@ -739,17 +743,11 @@ class OutputWindow():
 
     def append_text(self, output):
 
-        console = self.console
-
-        console.set_read_only(False)
-        edit = console.begin_edit()
-        console.insert(edit, console.size(), output)
-        console.end_edit(edit)
-        console.set_read_only(True)
-
-    def set_status(self, tag, message):
-
-        self.console.set_status(tag, message)
+        self.console.set_read_only(False)
+        edit = self.console.begin_edit()
+        self.console.insert(edit, self.console.size(), output)
+        self.console.end_edit(edit)
+        self.console.set_read_only(True)
 
 def process(command, callback, working_dir, outputdir):
 
