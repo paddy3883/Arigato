@@ -515,7 +515,9 @@ class AutoComplete(sublime_plugin.EventListener):
 # Classes used for running robot tests.
 #====================================================================================================
 
-# robot_run_test
+#----------------------------------------------------------
+# Sublime context menu command: Run test
+#----------------------------------------------------------
 class RobotRunTestCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -526,7 +528,9 @@ class RobotRunTestCommand(sublime_plugin.TextCommand):
         test_case = RobotTestCase(view)
         test_case.execute()
 
-# robot_run_suite
+#----------------------------------------------------------
+# Sublime context menu command: Run test suite
+#----------------------------------------------------------
 class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -537,7 +541,9 @@ class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
         test_suite = RobotTestSuite(view)
         test_suite.execute()
 
-# robot_run_panel
+#----------------------------------------------------------
+# Sublime context menu command: Run...
+#----------------------------------------------------------
 class RobotRunPanelCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -555,7 +561,18 @@ class RobotRunPanelCommand(sublime_plugin.TextCommand):
 
         sublime.error_message('Run panel is not yet implemented')
 
-#TODO: move this into robot_run.py
+#------------------------------------------------------------------------------------
+# Sublime menu command: Preferences -> Package Settings -> Arigato -> Run options
+#------------------------------------------------------------------------------------
+class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
+    def run(self):
+
+        current_folder = sublime.active_window().folders()[0]
+        sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
+
+#----------------------------------------------------------
+# This class handles running a single test suite
+#----------------------------------------------------------
 class RobotTestSuite(object):
 
     def __init__(self, view):
@@ -563,18 +580,14 @@ class RobotTestSuite(object):
 
     def execute(self):
         view = self.view
-        file_path = self.view.file_name()
-
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return
-        
         test = Test(self.view)
-        #test.run_test_suite()
 
+        #test.run_test_suite()
         return True
 
-#TODO: move this into robot_run.py
+#----------------------------------------------------------
+# This class handles running a single test case
+#----------------------------------------------------------
 class RobotTestCase(object):
 
     def __init__(self, view):
@@ -582,25 +595,137 @@ class RobotTestCase(object):
 
     def execute(self):
         view = self.view
-        file_path = view.file_name()
-
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return
+        test = Test(self.view)
 
         #TODO: this returns the keyword at cursor position, but we need to get the keyword at mouse position.
         sel = view.sel()[0]
         test_case = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
 
-        if (len(test_case) == 0) or (test_case[0] == " ") or (test_case[0] == "\t"):
+        #TODO: We can do few enhancements to this....
+        # 1. Make sure the selected test case actually appears under ***Test Cases*** section.
+        # 2. Even if the user clicks on a keyword inside a test case, execute the test case to which it belongs.
+        if (len(test_case) == 0) or (test_case[0] == ' ') or (test_case[0] == '\t'):
+            sublime.error_message("Please place cursor on a test case")
             return
 
-        test_case = test_case.replace(" ", "").replace("\t", "")
-
-        test = Test(self.view)
+        test_case = test_case.replace(' ', '').replace('\t', '')
+        print ('Test case name = ' + test_case)
         #test.run_test_case(test_case)
 
         return True
+
+#----------------------------------------------------------
+# This class is used to execute tests.
+#----------------------------------------------------------
+class Test():
+
+    def __init__(self, view):
+        self.view = view;
+        self.robot_root_folder = view.window().folders()[0]
+
+        if not view.file_name():
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        # set default values for the run parameters.
+        self.outputdir = 'TestResults'
+        self.testsuites = 'testsuites'
+        self.variables = []
+        self.tags_to_exclude = []
+        self.tags_to_include = []
+
+        # load settings(testsuites name, output directory, variables, tags) from settings file.
+        settings_file_name = os.path.join(self.robot_root_folder, 'robot.sublime-build')
+        print ('Reading the settings from: ' + settings_file_name)
+
+        if os.path.isfile(settings_file_name):
+            try:
+                json_data = open(settings_file_name)
+                data = json.load(json_data)
+                json_data.close()
+
+                print ('JSON loaded. Now reading the settings...')
+                if len(data['testsuites']) > 0:
+                    self.testsuites = data['testsuites']
+
+                if len(data['outputdir']) > 0:
+                    self.outputdir = data['outputdir']
+
+                if len(data['variables']) > 0:
+                    self.variables = data['variables']
+
+                if len(data['tags_to_exclude']) > 0:
+                    self.tags_to_exclude = data['tags_to_exclude']
+
+                if len(data['tags_to_include']) > 0:
+                    self.tags_to_include = data['tags_to_include']
+
+            except:
+                sublime.error_message('Error reading: ' + settings_file_name)
+                return
+
+        else:
+            sublime.error_message('Test runner settings file is not found in location: ' + settings_file_name)
+            return
+
+        # make sure test suites and results folders do not contain white-spaces inside.
+        whitespace_pattern = re.compile('.*\s')
+        if whitespace_pattern.match(self.testsuites):
+            sublime.error_message('Testsuites folder: "' + self.testsuites + '" contains white-spaces!')
+            return
+
+        if whitespace_pattern.match(self.outputdir):
+            sublime.error_message('Results folder: "' + self.outputdir + '" contains white-spaces!')
+            return
+
+        # append variables together so that they can be appended to the pybot command
+        self.variable_line = ' '
+        for variable in self.variables:
+            if whitespace_pattern.match(variable):
+                sublime.error_message('Variable: "' + variable + '" contains white-spaces and is not allowed!')
+                return
+            self.variable_line += '--variable ' + variable + ' '
+
+        # append exclude tags together so that they can be appended to the pybot command
+        self.exclude_tags = ' '
+        for exclude_tag in self.tags_to_exclude:
+            if whitespace_pattern.match(exclude_tag):
+                sublime.error_message('Tag: "' + exclude_tag + '" contains white-spaces and is not allowed!')
+                return
+            self.exclude_tags += '--exclude ' + exclude_tag + ' '
+
+        # append include tags together so that they can be appended to the pybot command
+        self.include_tags = ' '
+        for include_tag in self.tags_to_include:
+            if whitespace_pattern.match(include_tag):
+                sublime.error_message('Tag: "' + include_tag + '" contains white-spaces and is not allowed!')
+                return
+            self.include_tags += '--include ' + include_tag + ' '
+
+        # change current directory to the robot root folder.
+        os.chdir(self.robot_root_folder)
+
+        # find the suite name
+        test_suite_path, test_suite_file_name = os.path.split(view.file_name())
+        self.suite_name = test_suite_file_name.rstrip('.txt')
+
+        self.suite_name = (os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.') + '.' + self.suite_name).replace(' ', '')
+        print ('Test suite name = ' + self.suite_name)
+
+    def run_test_suite(self):
+        run_test('--suite ' + self.suite_name)
+
+    def run_test_case(self, test_case):
+        run_test('--test ' + test_case)
+
+    def run_test(self, selection):
+        output_target = OutputTarget(self.view.window(), self.robot_root_folder, '*Output*')
+
+        def _C(output):
+            if output is not None:
+                output_target.append_text(output)
+
+        process('pybot --outputdir ' + self.outputdir + self.variable_line + self.exclude_tags + self.include_tags + selection + ' ' + self.testsuites, _C, self.robot_root_folder, self.outputdir)
 
 class OutputTarget():
     def __init__(self, window, working_dir, name):
@@ -692,107 +817,4 @@ def main_thread(callback, *args, **kwargs):
 
     sublime.set_timeout(functools.partial(callback, *args, **kwargs), 0)
     #sublime.set_timeout_async(functools.partial(callback, *args, **kwargs), 0)
-
-#----------------------------------------------------------
-# This class is used to execute tests.
-#----------------------------------------------------------
-class Test():
-
-    def __init__(self, view):
-        self.view = view;
-        self.robot_root_folder = view.window().folders()[0]
-
-        # set default values for the run parameters.
-        self.outputdir = 'TestResults'
-        self.testsuites = 'testsuites'
-        self.variables = []
-        self.tags_to_exclude = []
-        self.tags_to_include = []
-
-        # load settings from settings file.
-        settings_file_name = os.path.join(self.robot_root_folder, 'robot.sublime-build')
-        print ("Reading the settings from: " + settings_file_name)
-
-        if os.path.isfile(settings_file_name):
-            try:
-                json_data = open(settings_file_name)
-                data = json.load(json_data)
-                json_data.close()
-
-                print ("JSON loaded. Now reading the settings...")
-                if len(data["testsuites"]) > 0:
-                    self.testsuites = data["testsuites"]
-
-                if len(data["outputdir"]) > 0:
-                    self.outputdir = data["outputdir"]
-
-                if len(data["variables"]) > 0:
-                    self.variables = data["variables"]
-
-                if len(data["tags_to_exclude"]) > 0:
-                    self.tags_to_exclude = data["tags_to_exclude"]
-
-                if len(data["tags_to_include"]) > 0:
-                    self.tags_to_include = data["tags_to_include"]
-
-            except:
-                sublime.error_message('Error reading: ' + settings_file_name)
-                return
-
-        else:
-            sublime.error_message('Test runner settings file is not found in location: ' + settings_file_name)
-            return
-
-        # make sure test suites and results folders do not contain spaces inside.
-        # TODO: expand this to validate variables and tags and also for whitespace characters.
-        if (" " in self.testsuites) or (" " in self.outputdir):
-            sublime.error_message("Testsuites folder or results folder cannot contain whitespaces!")
-            return
-
-        # change current directory to the robot root folder.
-        os.chdir(self.robot_root_folder)
-
-        # find the suite name
-        test_suite_path, test_suite_file_name = os.path.split(view.file_name())
-        self.suite_name = test_suite_file_name.rstrip('.txt')
-
-        self.suite_name = os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.') + '.' + self.suite_name
-        print ("test suite name = " + self.suite_name)
-
-        # construct variables
-        self.variable_line = ' '
-        for variable in self.variables:
-            self.variable_line += '--variable ' + variable + ' '
-
-        # construct excludes
-        self.exclude_tags = ' '
-        for exclude_tag in self.tags_to_exclude:
-            self.exclude_tags += '--exclude ' + exclude_tag + ' '
-
-        # construct includes
-        self.include_tags = ' '
-        for include_tag in self.tags_to_include:
-            self.include_tags += '--include ' + include_tag + ' '
-
-    def run_test_suite(self):
-        run_test('--suite ' + self.suite_name)
-
-    def run_test_case(self, test_case):
-        run_test('--test ' + test_case)
-
-    def run_test(self, selection):
-        output_target = OutputTarget(self.view.window(), self.robot_root_folder, '*Output*')
-
-        def _C(output):
-            if output is not None:
-                output_target.append_text(output)
-
-        process('pybot --outputdir ' + self.outputdir + self.variable_line + self.exclude_tags + self.include_tags + selection + ' ' + self.testsuites, _C, self.robot_root_folder, self.outputdir)
-
-# TODO: Not implemented yet.
-class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
-    def run(self):
-
-        current_folder = sublime.active_window().folders()[0]
-        sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
 
