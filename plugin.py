@@ -1,3 +1,7 @@
+#------------------------------------------------------
+# Library imports and initializations
+#------------------------------------------------------
+
 # setup pythonpath to include lib directory before other imports
 import os, sys
 
@@ -36,6 +40,10 @@ from os import remove, close
 views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
+
+#------------------------------------------------------
+# Auto completion of variable names.
+#------------------------------------------------------
 
 class CompleteVariableCommand(sublime_plugin.TextCommand):
     
@@ -86,6 +94,10 @@ class CompleteVariableCommand(sublime_plugin.TextCommand):
             return           
         self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.dollar_variables[index]+"}    "}})
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
 class CompleteListCommand(sublime_plugin.TextCommand):
     
     list_variables = []
@@ -135,57 +147,13 @@ class CompleteListCommand(sublime_plugin.TextCommand):
             return           
         self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list_variables[index]+"}    "}})
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
 class InsertMyText(sublime_plugin.TextCommand):
     def run(self, edit, args):
         self.view.insert(edit, args['startPos'], args['text'])
-
-
-#TODO: move this into robot_run.py
-class RobotTestSuite(object):
-
-    def __init__(self, view):
-        self.view = view
-
-    def execute(self):
-        view = self.view
-        file_path = self.view.file_name()
-
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return
-        
-        test = Test(self.view)
-        #test.run_test_suite()
-
-        return True
-
-#TODO: move this into robot_run.py
-class RobotTestCase(object):
-
-    def __init__(self, view):
-        self.view = view
-
-    def execute(self):
-        view = self.view
-        file_path = view.file_name()
-
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return
-
-        #TODO: this returns the keyword at cursor position, but we need to get the keyword at mouse position.
-        sel = view.sel()[0]
-        test_case = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
-
-        if (len(test_case) == 0) or (test_case[0] == " ") or (test_case[0] == "\t"):
-            return
-
-        test_case = test_case.replace(" ", "").replace("\t", "")
-
-        test = Test(self.view)
-        #test.run_test_case(test_case)
-
-        return True
 
 def is_robot_format(view):
     return view.settings().get('syntax').endswith('robot.tmLanguage')
@@ -207,6 +175,9 @@ def select_keyword_and_go(view, results):
         result_strings.append(strings)
     view.window().show_quick_panel(result_strings, on_done)
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class GoToKeywordThread(threading.Thread):
     def __init__(self, view, view_file, keyword, folders):
@@ -245,45 +216,9 @@ class GoToKeywordThread(threading.Thread):
             return []
         return keywords[lower_name]
 
-# robot_run_test
-class RobotRunTestCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        view = self.view
-
-        if not is_robot_format(view):
-            return
-
-        test_case = RobotTestCase(view)
-        test_case.execute()
-
-# robot_run_suite
-class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        view = self.view
-
-        if not is_robot_format(view):
-            return
-
-        test_suite = RobotTestSuite(view)
-        test_suite.execute()
-
-# robot_run_panel
-class RobotRunPanelCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        view = self.view
-
-        if not is_robot_format(view):
-            return
-
-        file_path = view.file_name()
-
-        if not file_path:
-            sublime.error_message('Please save the buffer to a file first.')
-            return
-
-        path, file_name = os.path.split(file_path)
-
-        sublime.error_message('Run panel is not yet implemented')
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class MatchingFile:
     def __init__(self, lineText, fileName, filePath, lineNumber):
@@ -291,6 +226,10 @@ class MatchingFile:
         self.fileName = fileName
         self.filePath = filePath
         self.lineNumber = lineNumber
+
+#------------------------------------------------------
+# Find keyword references
+#------------------------------------------------------
 
 class RobotFindReferencesCommand(sublime_plugin.TextCommand):
     matchingLines = []
@@ -347,6 +286,10 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
 
         window.show_quick_panel(listItems, on_done, sublime.MONOSPACE_FONT)
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
 class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
     currentKeyword = None 
     def run(self):
@@ -369,6 +312,10 @@ class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
                 self.window.active_view().run_command("robot_replace_references", {"oldKeyword":self.currentKeyword, "newKeyword": text} )
         except ValueError:
             pass
+
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
 
@@ -435,6 +382,9 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
             if output_target is not None:
                     output_target.append_text('\nTotal ' + str(replaceCount) + ' occurrences replaced')
                                        
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class RightClickCommand(sublime_plugin.TextCommand):
 	def run_(self, args):
@@ -445,13 +395,16 @@ class RightClickCommand(sublime_plugin.TextCommand):
 #line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
 #row, col = view.rowcol(sel.begin())
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class DragSelectCallbackCommand(sublime_plugin.TextCommand):
 	def run_(self, args):                
 		for c in sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down',[]):
 			c.on_pre_mouse_down(args)
 
-#We have to make a copy of the selection, otherwise we'll just have
+        #We have to make a copy of the selection, otherwise we'll just have
 		#a *reference* to the selection which is useless if we're trying to
 		#roll back to a previous one. A RegionSet doesn't support slicing so
 		#we have a comprehension instead.
@@ -474,6 +427,10 @@ class DragSelectCallbackCommand(sublime_plugin.TextCommand):
 		for c in sublime_plugin.all_callbacks.setdefault('on_post_mouse_down',[]):
 			c.on_post_mouse_down(click_point)
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
 class MouseEventListener(sublime_plugin.EventListener):
 	#If we add the callback names to the list of all callbacks, Sublime
 	#Text will automatically search for them in future imported classes.
@@ -483,7 +440,9 @@ class MouseEventListener(sublime_plugin.EventListener):
 	sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down', [])
 	sublime_plugin.all_callbacks.setdefault('on_post_mouse_down', [])
 
-
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -517,6 +476,9 @@ class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
         folders = view.window().folders()
         GoToKeywordThread(view, view_file, keyword, folders).start()
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class AutoSyntaxHighlight(sublime_plugin.EventListener):
     def autodetect(self, view):
@@ -535,6 +497,9 @@ class AutoSyntaxHighlight(sublime_plugin.EventListener):
     def on_post_save(self, view):
         self.autodetect(view)
 
+#------------------------------------------------------
+# 
+#------------------------------------------------------
 
 class AutoComplete(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
@@ -545,6 +510,97 @@ class AutoComplete(sublime_plugin.EventListener):
             user_keywords = [(kw[0].keyword.name, kw[0].keyword.name) for kw in keywords.itervalues()
                                 if kw[0].keyword.name.lower().startswith(lower_prefix)]
             return user_keywords
+
+#====================================================================================================
+# Classes used for running robot tests.
+#====================================================================================================
+
+# robot_run_test
+class RobotRunTestCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        test_case = RobotTestCase(view)
+        test_case.execute()
+
+# robot_run_suite
+class RobotRunTestSuiteCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        test_suite = RobotTestSuite(view)
+        test_suite.execute()
+
+# robot_run_panel
+class RobotRunPanelCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view = self.view
+
+        if not is_robot_format(view):
+            return
+
+        file_path = view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        path, file_name = os.path.split(file_path)
+
+        sublime.error_message('Run panel is not yet implemented')
+
+#TODO: move this into robot_run.py
+class RobotTestSuite(object):
+
+    def __init__(self, view):
+        self.view = view
+
+    def execute(self):
+        view = self.view
+        file_path = self.view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+        
+        test = Test(self.view)
+        #test.run_test_suite()
+
+        return True
+
+#TODO: move this into robot_run.py
+class RobotTestCase(object):
+
+    def __init__(self, view):
+        self.view = view
+
+    def execute(self):
+        view = self.view
+        file_path = view.file_name()
+
+        if not file_path:
+            sublime.error_message('Please save the buffer to a file first.')
+            return
+
+        #TODO: this returns the keyword at cursor position, but we need to get the keyword at mouse position.
+        sel = view.sel()[0]
+        test_case = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
+
+        if (len(test_case) == 0) or (test_case[0] == " ") or (test_case[0] == "\t"):
+            return
+
+        test_case = test_case.replace(" ", "").replace("\t", "")
+
+        test = Test(self.view)
+        #test.run_test_case(test_case)
+
+        return True
 
 class OutputTarget():
     def __init__(self, window, working_dir, name):
@@ -570,17 +626,17 @@ class OutputTarget():
 
         self.console.set_status(tag, message)
 
-def process(command, callback, working_dir, results_dir):
+def process(command, callback, working_dir, outputdir):
 
     thread = threading.Thread(target=_process, kwargs={
         'command': command,
         'callback': callback,
         'working_dir': working_dir,
-        'results_dir': results_dir
+        'outputdir': outputdir
     })
     thread.start()
 
-def _process(command, callback, working_dir, results_dir, **kwargs):
+def _process(command, callback, working_dir, outputdir, **kwargs):
     startupinfo = None
     test_run_failed = False
     if os.name == 'nt':
@@ -614,7 +670,7 @@ def _process(command, callback, working_dir, results_dir, **kwargs):
                 test_run_failed = True
                 main_thread(callback, '\nTest execution is complete, but there are test failures!', **kwargs)
 
-                output_file_name = results_dir + '/log.html'
+                output_file_name = outputdir + '/log.html'
                 if os.path.isfile(output_file_name):
                     webbrowser.open_new('file://' + output_file_name)
 
@@ -637,20 +693,16 @@ def main_thread(callback, *args, **kwargs):
     sublime.set_timeout(functools.partial(callback, *args, **kwargs), 0)
     #sublime.set_timeout_async(functools.partial(callback, *args, **kwargs), 0)
 
+#----------------------------------------------------------
+# This class is used to execute tests.
+#----------------------------------------------------------
 class Test():
 
     def __init__(self, view):
         self.view = view;
-        path, self.file_name = os.path.split(view.file_name())
-        self.root_folder = view.window().folders()[0]
-        self.suite_name = self.file_name.rstrip('.txt')
+        self.robot_root_folder = view.window().folders()[0]
 
-        print (self.root_folder)
-        print (path)
-        print ("test suite name = " + self.suite_name)
-        os.path.relpath(path, self.root_folder)
-
-        # Default values
+        # set default values for the run parameters.
         self.outputdir = 'TestResults'
         self.testsuites = 'testsuites'
         self.variables = []
@@ -658,31 +710,55 @@ class Test():
         self.tags_to_include = []
 
         # load settings from settings file.
-        settings_file_name = os.path.join(self.root_folder, 'robot.sublime-build')
+        settings_file_name = os.path.join(self.robot_root_folder, 'robot.sublime-build')
+        print ("Reading the settings from: " + settings_file_name)
 
         if os.path.isfile(settings_file_name):
-            json_data = open(settings_file_name)
-            data = json.load(json_data)
-            json_data.close()
+            try:
+                json_data = open(settings_file_name)
+                data = json.load(json_data)
+                json_data.close()
 
-            if len(data["testsuites"]) > 0:
-                self.testsuites = data["testsuites"]
+                print ("JSON loaded. Now reading the settings...")
+                if len(data["testsuites"]) > 0:
+                    self.testsuites = data["testsuites"]
 
-            if len(data["outputdir"]) > 0:
-                self.outputdir = data["outputdir"]
+                if len(data["outputdir"]) > 0:
+                    self.outputdir = data["outputdir"]
 
-            if len(data["variables"]) > 0:
-                self.variables = data["variables"]
+                if len(data["variables"]) > 0:
+                    self.variables = data["variables"]
 
-            if len(data["tags_to_exclude"]) > 0:
-                self.tags_to_exclude = data["tags_to_exclude"]
+                if len(data["tags_to_exclude"]) > 0:
+                    self.tags_to_exclude = data["tags_to_exclude"]
 
-            if len(data["tags_to_include"]) > 0:
-                self.tags_to_include = data["tags_to_include"]
+                if len(data["tags_to_include"]) > 0:
+                    self.tags_to_include = data["tags_to_include"]
 
-        self.results_dir = os.path.join(self.root_folder, self.outputdir)
-        self.testsuites = os.path.join(self.root_folder, self.testsuites)
-        
+            except:
+                sublime.error_message('Error reading: ' + settings_file_name)
+                return
+
+        else:
+            sublime.error_message('Test runner settings file is not found in location: ' + settings_file_name)
+            return
+
+        # make sure test suites and results folders do not contain spaces inside.
+        # TODO: expand this to validate variables and tags and also for whitespace characters.
+        if (" " in self.testsuites) or (" " in self.outputdir):
+            sublime.error_message("Testsuites folder or results folder cannot contain whitespaces!")
+            return
+
+        # change current directory to the robot root folder.
+        os.chdir(self.robot_root_folder)
+
+        # find the suite name
+        test_suite_path, test_suite_file_name = os.path.split(view.file_name())
+        self.suite_name = test_suite_file_name.rstrip('.txt')
+
+        self.suite_name = os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.') + '.' + self.suite_name
+        print ("test suite name = " + self.suite_name)
+
         # construct variables
         self.variable_line = ' '
         for variable in self.variables:
@@ -705,13 +781,13 @@ class Test():
         run_test('--test ' + test_case)
 
     def run_test(self, selection):
-        output_target = OutputTarget(self.view.window(), self.root_folder, '*Output*')
+        output_target = OutputTarget(self.view.window(), self.robot_root_folder, '*Output*')
 
         def _C(output):
             if output is not None:
                 output_target.append_text(output)
 
-        process('pybot --outputdir ' + self.results_dir + self.variable_line + self.exclude_tags + self.include_tags + selection + ' ' + self.testsuites, _C, self.root_folder, self.results_dir)
+        process('pybot --outputdir ' + self.outputdir + self.variable_line + self.exclude_tags + self.include_tags + selection + ' ' + self.testsuites, _C, self.robot_root_folder, self.outputdir)
 
 # TODO: Not implemented yet.
 class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
