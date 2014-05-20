@@ -393,6 +393,7 @@ class AutoComplete(sublime_plugin.EventListener):
 
 #====================================================================================================
 # Classes used for running robot tests.
+#   Note: See lib/robot_run.py for detailed implementation.
 #====================================================================================================
 
 #----------------------------------------------------------
@@ -446,6 +447,7 @@ class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
 
 #====================================================================================================
 # Classes used for auto completion.
+#   Note: See lib/robot_auto_completion.py for detailed implementation.
 #====================================================================================================
 
 #----------------------------------------------------------

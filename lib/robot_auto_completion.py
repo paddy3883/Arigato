@@ -1,12 +1,6 @@
 import os
+import re
 import sublime
-
-#-------------------------------------------------------------------------
-# Global lists containing all known variable names and list names
-#-------------------------------------------------------------------------
-
-known_variables = []
-known_lists = []
 
 #-------------------------------------------------------------------------
 # Class to handle auto completion of variable names and list names.
@@ -18,6 +12,11 @@ class Search(object):
         self.edit = edit
         self.plugin_dir = plugin_dir
         self.window = sublime.active_window()
+        self.variable_pattern = re.compile('\s*\\$\\{\w+\\}')
+        self.list_pattern = re.compile('\s*@\\{\w+\\}')
+        self.known_variables = []
+        self.known_lists = []
+
         self._search_within_folders(view.window().folders())
 
     def _search_within_folders(self, folders):
@@ -31,26 +30,42 @@ class Search(object):
                         self._search_within_file(file_path)
 
     def _search_within_file(self, file_path):
-        known_variables.append(file_path)
-        return
-        pattern = re.compile('\s*\\$\\{\w+\\}')
+
         try:
            with open(file_path, 'rb') as openFile:
+
                 lines = openFile.readlines()
+                inside_variable_block = False
+
                 for line in lines:
-                     # search if line contains string
-                     m = pattern.match(line)
-                     if m:
-                        itemfound=m.group(0).strip()
-                        itemfound = re.sub('[${}]', '', itemfound)
-                        if itemfound not in self.dollar_variables:
-                            self.dollar_variables.append(itemfound)
+                    # Any line that starts with '***' marks start of a new code block in Robot.
+                    if line.startswith('***'):
+                        # we know that all variables must follow *** Variables ***
+                        inside_variable_block = line.startswith('*** Variables ***')
+                        continue
+
+                    if inside_variable_block:
+                        self._search_within_line(line)
+
         except IOError as e:
            return
 
+    def _search_within_line(self, line):
+        match = self.variable_pattern.match(line)
+        if match:
+            variable_name = re.sub('[${}]', '', match.group(0).strip())
+            if variable_name not in self.known_variables:
+                self.known_variables.append(variable_name)
+
+        match = self.list_pattern.match(line)
+        if match:
+            list_name = re.sub('[@{}]', '', match.group(0).strip())
+            if list_name not in self.known_lists:
+                self.known_lists.append(list_name)
+
     def auto_complete_variable(self):
         # display a panel containing a list of known variables and let the user chose.
-        self.window.show_quick_panel(known_variables, self._on_user_selection_of_variable)
+        self.window.show_quick_panel(self.known_variables, self._on_user_selection_of_variable)
 
         # replace the user typed ${{ with just ${
         self._insert_text("${")
@@ -58,7 +73,7 @@ class Search(object):
 
     def auto_complete_list(self):
         # display a panel containing a list of known lists and let the user chose.
-        self.window.show_quick_panel(known_lists, self._on_user_selection_of_list)
+        self.window.show_quick_panel(self.known_lists, self._on_user_selection_of_list)
 
         # replace the user typed @{{ with just @{
         self._insert_text("@{")
@@ -66,11 +81,11 @@ class Search(object):
 
     def _on_user_selection_of_variable(self, index):
         if index != -1:
-            self._insert_text(known_variables[index] + "}    ")
+            self._insert_text(self.known_variables[index] + "}    ")
 
     def _on_user_selection_of_list(self, index):
         if index != -1:
-            self._insert_text(known_lists[index] + "}    ")
+            self._insert_text(self.known_lists[index] + "}    ")
 
     def _insert_text(self, text):
         self.view.insert(self.edit, self.view.sel()[0].begin(), text)
