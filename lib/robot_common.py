@@ -1,6 +1,4 @@
 import os
-import re
-import sublime
 
 #--------------------------------------------------------------------------
 # This is the class that outputs test progress and results into a window
