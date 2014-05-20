@@ -150,16 +150,13 @@ class Test():
                 return
             self.include_tags += '--include ' + include_tag + ' '
 
-        # change current directory to the robot root folder.
-        os.chdir(self.robot_root_folder)
-
         # find the suite name
         test_suite_path, test_suite_file_name = os.path.split(view.file_name())
         self.test_suite_name = test_suite_file_name.rstrip('.txt')
 
         print ('Test suite path = ' + test_suite_path)
         print ('Test suites = ' + self.testsuites)
-        test_suite_path = os.path.relpath(test_suite_path, self.testsuites).replace('\\', '.')
+        test_suite_path = os.path.relpath(test_suite_path, os.path.join(self.robot_root_folder, self.testsuites)).replace('\\', '.')
 
         if not (test_suite_path == '.'):
             self.test_suite_name = test_suite_path + '.' + self.test_suite_name
@@ -178,72 +175,85 @@ class Test():
             if output is not None:
                 output_window.append_text(output)
 
-        process('pybot --outputdir ' + self.outputdir + ' ' + 
-                self.variable_line + self.exclude_tags + self.include_tags + 
-                '--suite ' + self.test_suite_name + ' ' + filter + ' ' + self.testsuites, 
-                _display_text_in_output_window, self.robot_root_folder, self.outputdir)
+        self.open_thread_to_execute_pybot(
+            'pybot --outputdir ' + self.outputdir + ' ' + 
+            self.variable_line + self.exclude_tags + self.include_tags +
+            '--suite ' + self.test_suite_name + ' ' + 
+            filter + ' ' + self.testsuites, 
+            _display_text_in_output_window, 
+            self.robot_root_folder, 
+            self.outputdir
+            )
 
-def process(command, callback, working_dir, outputdir):
+    def open_thread_to_execute_pybot(self, command, callback, working_dir, outputdir):
 
-    thread = threading.Thread(target=_process, kwargs={
-        'command': command,
-        'callback': callback,
-        'working_dir': working_dir,
-        'outputdir': outputdir
-    })
-    thread.start()
+        thread = threading.Thread(
+                    target = self._execute_pybot, 
+                    kwargs = {
+                        'command': command,
+                        'callback': callback,
+                        'working_dir': working_dir,
+                        'outputdir': outputdir
+                        }
+                    )
 
-def _process(command, callback, working_dir, outputdir, **kwargs):
-    startupinfo = None
-    test_run_failed = False
-    if os.name == 'nt':
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        thread.start()
 
-    try:
-
-        main_thread(callback, command + '\n\n')
-        proc = subprocess.Popen(command,
-                                stdin=subprocess.PIPE,
-                                universal_newlines=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                shell=True,
-                                cwd=working_dir,
-                                startupinfo=startupinfo)
-
+    def _execute_pybot(self, command, callback, working_dir, outputdir, **kwargs):
+        startupinfo = None
         return_code = None
-        while return_code is None:
-            return_code = proc.poll()
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-            if return_code is None or return_code == 0:
+        try:
 
-                output = True
-                while output:
-                    output = proc.stdout.readline()
-                    main_thread(callback, output, **kwargs)
+            # display the pybot command that we execute
+            main_thread(callback, command + '\n\n')
 
-            if  return_code == 1:
-                test_run_failed = True
-                main_thread(callback, '\nTest execution is complete, but there are test failures!', **kwargs)
+            # start pybot command
+            proc = subprocess.Popen(
+                    command,
+                    stdin = subprocess.PIPE,
+                    universal_newlines = True,
+                    stdout = subprocess.PIPE,
+                    stderr = subprocess.STDOUT,
+                    shell = True,
+                    cwd = working_dir,
+                    startupinfo = startupinfo
+                    )
 
-                output_file_name = outputdir + '/log.html'
-                if os.path.isfile(output_file_name):
-                    webbrowser.open_new('file://' + output_file_name)
+            # collect input while the pybot command is in progress
+            while return_code is None:
+                return_code = proc.poll()
 
-    except subprocess.CalledProcessError as e:
+                if return_code is None or return_code == 0:
+                    output = True
+                    while output:
+                        output = proc.stdout.readline()
+                        main_thread(callback, output, **kwargs)
 
-        main_thread(callback, e.returncode)
+        except subprocess.CalledProcessError as e:
 
-    except OSError as e:
+            main_thread(callback, e.returncode)
 
-        if e.errno == 2:
-            sublime.message_dialog('Command not found\n\nCommand is: %s' % command)
+        except OSError as e:
+
+            if e.errno == 2:
+                sublime.message_dialog('Command not found\n\nCommand is: %s' % command)
+            else:
+                raise e
+
+        if return_code == 0:
+            main_thread(callback, '\nTest execution is complete and all tests passed!', **kwargs)
         else:
-            raise e
+            main_thread(callback, '\nTest execution is complete, but there are test failures!', **kwargs)
 
-    if not test_run_failed:
-        main_thread(callback, '\nTest execution is complete and all tests passed!', **kwargs)
+            output_file_name = os.path.join(working_dir, outputdir, 'log.html')
+            print "output file: " + output_file_name
+
+            if os.path.isfile(output_file_name):
+                webbrowser.open_new('file://' + output_file_name)
 
 #-------------------------------------------------------------------------
 # A function that executes a callback function on the main thread.
