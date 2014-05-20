@@ -23,9 +23,8 @@ import shutil
 import tempfile
 
 from keyword_parse import get_keyword_at_pos
-from string_populator import populate_testcase_file
 from robot_scanner import Scanner, detect_robot_regex
-from robot_common import OutputWindow, is_robot_format
+from robot_common import OutputWindow, RobotTestCaseFile, is_robot_format, is_robot_file
 import stdlib_keywords
 import robot_run
 import robot_auto_completion
@@ -53,7 +52,7 @@ class GoToKeywordThread(threading.Thread):
         for folder in self.folders:
             for root, dirs, files in os.walk(folder):
                 for f in files:
-                    if f.endswith('.txt') and f != '__init__.txt':
+                    if is_robot_file(f) and f != '__init__.txt':
                         path = os.path.join(root, f)
                         scanner.scan_without_resources(path, keywords)
 
@@ -138,7 +137,7 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
         for folder in view.window().folders():
             for root, dirs, files in os.walk(folder):
                 for f in files:
-                    if f.endswith('.txt') and f != '__init__.txt':
+                    if is_robot_file(f) and f != '__init__.txt':
                         path = os.path.join(root, f)
                         try:
                             with open(path, 'rb') as openFile:
@@ -234,7 +233,7 @@ class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
                 for f in files:
                     firstReplace = 1
                     #sublime.error_message('step2d')
-                    if f.endswith('.txt') and f != '__init__.txt':
+                    if is_robot_file(f) and f != '__init__.txt':
                         path = os.path.join(root, f)
                         try:
                             with open(path, 'rb') as openFile:
@@ -311,19 +310,6 @@ class DragSelectCallbackCommand(sublime_plugin.TextCommand):
 # 
 #------------------------------------------------------
 
-class MouseEventListener(sublime_plugin.EventListener):
-	#If we add the callback names to the list of all callbacks, Sublime
-	#Text will automatically search for them in future imported classes.
-	#You don't actually *need* to inherit from MouseEventListener, but
-	#doing so forces you to import this file and therefore forces Sublime
-	#to add these to its callback list.
-	sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down', [])
-	sublime_plugin.all_callbacks.setdefault('on_post_mouse_down', [])
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -351,45 +337,10 @@ class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
         if not keyword:
             return
 
-        view_file = populate_testcase_file(self.view)
+        view_file = RobotTestCaseFile(self.view).file
         # must be run on main thread
         folders = view.window().folders()
         GoToKeywordThread(view, view_file, keyword, folders).start()
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
-class AutoSyntaxHighlight(sublime_plugin.EventListener):
-    def autodetect(self, view):
-        # file name can be None if it's a find result view that is restored on startup
-        if (view.file_name() != None and view.file_name().endswith('.txt') and
-            view.find(detect_robot_regex, 0, sublime.IGNORECASE) != None):
-
-            view.set_syntax_file(os.path.join(plugin_dir, "robot.tmLanguage"))
-
-    def on_load(self, view):
-        if view.id() in views_to_center:
-            view.show_at_center(view.text_point(views_to_center[view.id()], 0))
-            del views_to_center[view.id()]
-        self.autodetect(view)
-
-    def on_post_save(self, view):
-        self.autodetect(view)
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
-class AutoComplete(sublime_plugin.EventListener):
-    def on_query_completions(self, view, prefix, locations):
-        if is_robot_format(view):
-            view_file = populate_testcase_file(view)
-            keywords = Scanner(view).scan_file(view_file)
-            lower_prefix = prefix.lower()
-            user_keywords = [(kw[0].keyword.name, kw[0].keyword.name) for kw in keywords.itervalues()
-                                if kw[0].keyword.name.lower().startswith(lower_prefix)]
-            return user_keywords
 
 #====================================================================================================
 # Classes used for running robot tests.
@@ -467,4 +418,56 @@ class RobotCompleteListCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         search = robot_auto_completion.Search(self.view, edit, plugin_dir)
         search.auto_complete_list()
+
+#====================================================================================================
+# Event listeners
+#====================================================================================================
+
+#------------------------------------------------------
+# Highlight robot framework syntax.
+#------------------------------------------------------
+
+class AutoSyntaxHighlight(sublime_plugin.EventListener):
+    def on_load(self, view):
+        if view.id() in views_to_center:
+            view.show_at_center(view.text_point(views_to_center[view.id()], 0))
+            del views_to_center[view.id()]
+        self._autodetect(view)
+
+    def on_post_save(self, view):
+        self._autodetect(view)
+
+    def _autodetect(self, view):
+        # file name can be None if it's a find result view that is restored on startup
+        if (view.file_name() != None and is_robot_file(view.file_name()) and
+            view.find(detect_robot_regex, 0, sublime.IGNORECASE) != None):
+
+            view.set_syntax_file(os.path.join(plugin_dir, "robot.tmLanguage"))
+
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
+class AutoComplete(sublime_plugin.EventListener):
+    def on_query_completions(self, view, prefix, locations):
+        if is_robot_format(view):
+            view_file = RobotTestCaseFile(view).file
+            keywords = Scanner(view).scan_file(view_file)
+            lower_prefix = prefix.lower()
+            user_keywords = [(kw[0].keyword.name, kw[0].keyword.name) for kw in keywords.itervalues()
+                                if kw[0].keyword.name.lower().startswith(lower_prefix)]
+            return user_keywords
+
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
+class MouseEventListener(sublime_plugin.EventListener):
+	#If we add the callback names to the list of all callbacks, Sublime
+	#Text will automatically search for them in future imported classes.
+	#You don't actually *need* to inherit from MouseEventListener, but
+	#doing so forces you to import this file and therefore forces Sublime
+	#to add these to its callback list.
+	sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down', [])
+	sublime_plugin.all_callbacks.setdefault('on_post_mouse_down', [])
 

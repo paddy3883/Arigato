@@ -152,7 +152,7 @@ class Test():
 
         # find the suite name
         test_suite_path, test_suite_file_name = os.path.split(view.file_name())
-        self.test_suite_name = test_suite_file_name.rstrip('.txt')
+        self.test_suite_name = os.path.splitext(test_suite_file_name)[0]
 
         print ('Test suite path = ' + test_suite_path)
         print ('Test suites = ' + self.testsuites)

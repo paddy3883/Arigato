@@ -1,17 +1,16 @@
 import os
 import re
+import sublime
+
 from copy import copy
 from collections import deque
 from time import time
-
-import sublime
 
 from robot.api import TestCaseFile, ResourceFile
 from robot.errors import DataError
 
 from scanner_cache import ScannerCache
-from string_populator import populate_from_lines
-
+from robot_common import FromStringPopulator
 
 scanner_cache = ScannerCache()
 
@@ -115,9 +114,14 @@ class Scanner(object):
             try:
                 for line in lines:
                     if re.search(detect_robot_regex, line, re.IGNORECASE) != None:
-                        data_file = populate_from_lines(lines, file_path)
+                        data_file = self._populate_from_lines(lines, file_path)
                         scanner_cache.put_data(file_path, data_file, stored_hash)
                         self.scan_keywords(data_file, keywords)
                         break
             except DataError as de:
                 pass
+
+    def _populate_from_lines(self, lines, file_path):
+        data_file = TestCaseFile(source = file_path)
+        FromStringPopulator(data_file, lines).populate(file_path)
+        return data_file

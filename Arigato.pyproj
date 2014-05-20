@@ -17,14 +17,12 @@
   <ItemGroup>
     <Compile Include="lib\robot_run.py" />
     <Compile Include="lib\robot_auto_completion.py" />
-    <Compile Include="lib\stdlib_variables.py" />
     <Compile Include="plugin.py" />
     <Compile Include="lib\keyword_parse.py" />
     <Compile Include="lib\robot_common.py" />
     <Compile Include="lib\robot_scanner.py" />
     <Compile Include="lib\scanner_cache.py" />
     <Compile Include="lib\stdlib_keywords.py" />
-    <Compile Include="lib\string_populator.py" />
     <Compile Include="lib\robot\errors.py" />
     <Compile Include="lib\robot\jarrunner.py" />
     <Compile Include="lib\robot\jythonworkarounds.py" />
@@ -255,7 +253,6 @@
     <Folder Include="lib\robot\utils" />
     <Folder Include="lib\robot\variables" />
     <Folder Include="lib\robot\writer" />
-    <Folder Include="stdlib_keywords" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

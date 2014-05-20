@@ -1,6 +1,7 @@
 import os
 import re
 import sublime
+from robot_common import is_robot_file 
 
 #-------------------------------------------------------------------------
 # Class to handle auto completion of variable names and list names.
@@ -21,12 +22,12 @@ class Search(object):
 
     def _search_within_folders(self, folders):
         for folder in folders:
-            print 'searching folder for variables: ' + folder
+            #print 'searching folder for variables: ' + folder
             for root, dirs, files in os.walk(folder):
                 for file_name in files:
-                    if file_name.endswith('.txt'):
+                    if is_robot_file(file_name):
                         file_path = os.path.join(root, file_name)
-                        print 'searching file for variables: ' + file_path
+                        #print 'searching file for variables: ' + file_path
                         self._search_within_file(file_path)
 
     def _search_within_file(self, file_path):

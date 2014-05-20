@@ -4,12 +4,13 @@
 <dict>
 	<key>comment</key>
 	<string>
-    Robot Framework syntax highlighting for txt files.
+    Robot Framework syntax highlighting for .txt and .rob files.
     </string>
 	<key>fileTypes</key>
 	<array>
 		<string>txt</string>
-	</array>
+    <string>rob</string>
+  </array>
 	<key>keyEquivalent</key>
 	<string>^~R</string>
 	<key>name</key>
