@@ -175,7 +175,7 @@ class Test():
             if output is not None:
                 output_window.append_text(output)
 
-        self.open_thread_to_execute_pybot(
+        self._open_thread_to_execute_pybot(
             'pybot --outputdir ' + self.outputdir + ' ' + 
             self.variable_line + self.exclude_tags + self.include_tags +
             '--suite ' + self.test_suite_name + ' ' + 
@@ -185,7 +185,7 @@ class Test():
             self.outputdir
             )
 
-    def open_thread_to_execute_pybot(self, command, callback, working_dir, outputdir):
+    def _open_thread_to_execute_pybot(self, command, callback, working_dir, outputdir):
 
         thread = threading.Thread(
                     target = self._execute_pybot, 

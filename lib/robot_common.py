@@ -21,3 +21,9 @@ class OutputWindow():
         self.console.end_edit(edit)
         self.console.set_read_only(True)
 
+#--------------------------------------------------------------------------
+# Commonly used function to check if the current file is a robot file.
+#--------------------------------------------------------------------------
+def is_robot_format(view):
+    return view.settings().get('syntax').endswith('robot.tmLanguage')
+

@@ -31,84 +31,84 @@
                "caption": "*** Settings ***",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/heading-settings.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/heading-settings.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "*** Variables ***",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/heading-variables.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/heading-variables.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "*** Test Cases ***",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/heading-testcases.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/heading-testcases.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "*** Keywords ***",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/heading-keywords.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/heading-keywords.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "[DOCUMENTATION]",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/documentation.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/documentation.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "[Arguments]",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/arguments.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/arguments.sublime-snippet"
 					}		
 			}
 			,{
                "caption": ":FOR Loop",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/forloop.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/forloop.sublime-snippet"
 					}		
 			}
 			,{
                "caption": ":FOR Loop in Range",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/forloopinrange.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/forloopinrange.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "Import OperatingSystem",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/library-operatingsystem.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/library-operatingsystem.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "Import Selenium2Library",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/library-selenium2library.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/library-selenium2library.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "Import JSON Library",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/library-json.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/library-json.sublime-snippet"
 					}		
 			}
 			,{
                "caption": "Import XML Library",
                 "command": "insert_snippet",
                 "args": {
-                    "name": "Packages/Arigato/Snippets/library-xml.sublime-snippet"
+                    "name": "Packages/Robot Framework/Snippets/library-xml.sublime-snippet"
 					}		
 			}
 		]

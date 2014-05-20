@@ -25,147 +25,14 @@ import tempfile
 from keyword_parse import get_keyword_at_pos
 from string_populator import populate_testcase_file
 from robot_scanner import Scanner, detect_robot_regex
-from robot_common import OutputWindow
+from robot_common import OutputWindow, is_robot_format
 import stdlib_keywords
 import robot_run
+import robot_auto_completion
 
 views_to_center = {}
 
 stdlib_keywords.load(plugin_dir)
-
-#------------------------------------------------------
-# Auto completion of variable names.
-#------------------------------------------------------
-
-class CompleteVariableCommand(sublime_plugin.TextCommand):
-    
-    dollar_variables = []
-    def __init__(self, view):
-        #initialize(view)
-        return
-
-    def initialize(self, view):
-        self.view = view
-        self.window = sublime.active_window()
-        self.folders= self.view.window().folders()
-        for folder in self.folders:
-            print ('searching folders') 
-            for root, dirs, files in os.walk(folder):
-                for f in files:
-                    if f.endswith('.txt') and f != '__init__.txt':
-                        path = os.path.join(root, f) 
-                        self.search_variables(path)
-                        print ('searching files')
-
-    def run(self, edit):
-        view = self.view
-        window = sublime.active_window()
-        window.show_quick_panel(self.dollar_variables, self.on_done)
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"${"}})
-        self.curPos = self.view.sel()[0].begin()
-
-    def search_variables(self, path):        
-        pattern = '\s*\\$\\{\w+\\}'
-        p = re.compile(pattern)
-        try:
-           with open(path, 'rb') as openFile:
-                lines = openFile.readlines()
-                for line in lines:
-                     # search if line contains string
-                     m = p.match(line)
-                     if m:
-                        itemfound=m.group(0).strip()
-                        itemfound = re.sub('[${}]', '', itemfound)
-                        if itemfound not in self.dollar_variables:
-                            self.dollar_variables.append(itemfound)
-        except IOError as e:
-           return
-
-    def on_done(self, index):
-        if index == -1:
-            return           
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.dollar_variables[index]+"}    "}})
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
-class CompleteListCommand(sublime_plugin.TextCommand):
-    
-    list_variables = []
-    def __init__(self, view):
-        #initialize(view)
-        return
-
-    def initialize(self, view):
-        self.view = view
-        self.window = sublime.active_window()
-        self.folders= self.view.window().folders()
-        for folder in self.folders:
-            print ('searching folders') 
-            for root, dirs, files in os.walk(folder):
-                for f in files:
-                    if f.endswith('.txt') and f != '__init__.txt':
-                        path = os.path.join(root, f) 
-                        self.search_list_variables(path)
-                        print ('searching files')  
-
-    def run(self, edit):
-        view = self.view
-        window = sublime.active_window()
-        window.show_quick_panel(self.list_variables, self.on_done)
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':"@{"}})
-        self.curPos = self.view.sel()[0].begin()
-
-    def search_list_variables(self, path):
-        pattern = '\s*@\\{\w+\\}'
-        p = re.compile(pattern)
-        try:
-           with open(path, 'rb') as openFile:
-             lines = openFile.readlines()
-             for line in lines:
-                 # search if line contains string
-                 m = p.match(line)
-                 if m:
-                     itemfound=m.group(0).strip()
-                     itemfound = re.sub('[@{}]', '', itemfound)
-                     if itemfound not in self.list_variables:
-                        self.list_variables.append(itemfound)
-        except IOError as e:
-           return        
-           
-    def on_done(self, index):
-        if index == -1:
-            return           
-        self.view.run_command("insert_my_text", {"args":{'startPos':self.view.sel()[0].begin(), 'text':self.list_variables[index]+"}    "}})
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
-class InsertMyText(sublime_plugin.TextCommand):
-    def run(self, edit, args):
-        self.view.insert(edit, args['startPos'], args['text'])
-
-def is_robot_format(view):
-    return view.settings().get('syntax').endswith('robot.tmLanguage')
-
-def select_keyword_and_go(view, results):
-    def on_done(index):
-        if index == -1:
-            return
-        results[index].show_definition(view, views_to_center)
-
-    if len(results) == 1 and results[0].allow_unprompted_go_to():
-        results[0].show_definition(view, views_to_center)
-        return
-
-    result_strings = []
-    for kw in results:
-        strings = [kw.name]
-        strings.extend(kw.description)
-        result_strings.append(strings)
-    view.window().show_quick_panel(result_strings, on_done)
 
 #------------------------------------------------------
 # 
@@ -207,6 +74,27 @@ class GoToKeywordThread(threading.Thread):
         if not keywords.has_key(lower_name):
             return []
         return keywords[lower_name]
+
+#------------------------------------------------------
+# 
+#------------------------------------------------------
+
+def select_keyword_and_go(view, results):
+    def on_done(index):
+        if index == -1:
+            return
+        results[index].show_definition(view, views_to_center)
+
+    if len(results) == 1 and results[0].allow_unprompted_go_to():
+        results[0].show_definition(view, views_to_center)
+        return
+
+    result_strings = []
+    for kw in results:
+        strings = [kw.name]
+        strings.extend(kw.description)
+        result_strings.append(strings)
+    view.window().show_quick_panel(result_strings, on_done)
 
 #------------------------------------------------------
 # 
@@ -555,4 +443,26 @@ class RobotRunOptionsCommand(sublime_plugin.WindowCommand):
 
         current_folder = sublime.active_window().folders()[0]
         sublime.active_window().open_file(os.path.join(current_folder, 'robot.sublime-build'))
+
+#====================================================================================================
+# Classes used for auto completion.
+#====================================================================================================
+
+#----------------------------------------------------------
+# Mapped key: ${{ For auto completion of variable names.
+#----------------------------------------------------------
+
+class RobotCompleteVariableCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        search = robot_auto_completion.Search(self.view, edit, plugin_dir)
+        search.auto_complete_variable()
+
+#------------------------------------------------------
+# Mapped key: @{{ For auto completion of list names.
+#------------------------------------------------------
+
+class RobotCompleteListCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        search = robot_auto_completion.Search(self.view, edit, plugin_dir)
+        search.auto_complete_list()
 

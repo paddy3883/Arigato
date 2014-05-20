@@ -3,6 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Arigato", "Arigato.pyproj", "{64FD19F3-E336-46D9-A759-E17DB2B6443C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Definition Files", "Definition Files", "{E4580E16-7E49-4ECC-9AC2-E63B1E6DE092}"
+	ProjectSection(SolutionItems) = preProject
+		Context.sublime-menu = Context.sublime-menu
+		Default (Windows).sublime-keymap = Default (Windows).sublime-keymap
+		Main.sublime-menu = Main.sublime-menu
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

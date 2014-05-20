@@ -1,5 +1,5 @@
 [
 	{ "keys": ["alt+enter"], "command": "robot_go_to_keyword" },
-	{ "keys": ["$","{","{"], "command": "complete_variable" },
-	{ "keys": ["@","{","{"], "command": "complete_list" }
+	{ "keys": ["$","{","{"], "command": "robot_complete_variable" },
+	{ "keys": ["@","{","{"], "command": "robot_complete_list" }
 ]
