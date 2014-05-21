@@ -15,10 +15,11 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
+    <Compile Include="lib\robot_keywords.py" />
+    <Compile Include="lib\robot_references.py" />
     <Compile Include="lib\robot_run.py" />
     <Compile Include="lib\robot_auto_completion.py" />
     <Compile Include="plugin.py" />
-    <Compile Include="lib\keyword_parse.py" />
     <Compile Include="lib\robot_common.py" />
     <Compile Include="lib\robot_scanner.py" />
     <Compile Include="lib\scanner_cache.py" />
