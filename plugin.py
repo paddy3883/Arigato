@@ -66,7 +66,7 @@ class GoToKeywordThread(threading.Thread):
         results.extend(self.search_user_keywords(keywords, self.keyword))
         results.extend(stdlib_keywords.search_keywords(self.keyword))
 
-        sublime.set_timeout(lambda: select_keyword_and_go(self.view, results), 0)
+        sublime.set_timeout(lambda: self._select_keyword_and_go(self.view, results), 0)
 
     def search_user_keywords(self, keywords, name):
         lower_name = name.lower()
@@ -74,26 +74,22 @@ class GoToKeywordThread(threading.Thread):
             return []
         return keywords[lower_name]
 
-#------------------------------------------------------
-# 
-#------------------------------------------------------
+    def _select_keyword_and_go(self, view, results):
+        def on_done(index):
+            if index == -1:
+                return
+            results[index].show_definition(view, views_to_center)
 
-def select_keyword_and_go(view, results):
-    def on_done(index):
-        if index == -1:
+        if len(results) == 1 and results[0].allow_unprompted_go_to():
+            results[0].show_definition(view, views_to_center)
             return
-        results[index].show_definition(view, views_to_center)
 
-    if len(results) == 1 and results[0].allow_unprompted_go_to():
-        results[0].show_definition(view, views_to_center)
-        return
-
-    result_strings = []
-    for kw in results:
-        strings = [kw.name]
-        strings.extend(kw.description)
-        result_strings.append(strings)
-    view.window().show_quick_panel(result_strings, on_done)
+        result_strings = []
+        for kw in results:
+            strings = [kw.name]
+            strings.extend(kw.description)
+            result_strings.append(strings)
+        view.window().show_quick_panel(result_strings, on_done)
 
 #------------------------------------------------------
 # 
@@ -278,38 +274,6 @@ class RightClickCommand(sublime_plugin.TextCommand):
 # 
 #------------------------------------------------------
 
-class DragSelectCallbackCommand(sublime_plugin.TextCommand):
-	def run_(self, args):                
-		for c in sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down',[]):
-			c.on_pre_mouse_down(args)
-
-        #We have to make a copy of the selection, otherwise we'll just have
-		#a *reference* to the selection which is useless if we're trying to
-		#roll back to a previous one. A RegionSet doesn't support slicing so
-		#we have a comprehension instead.
-		old_sel = [r for r in self.view.sel()]
-
-		#Only send the event so we don't do an extend or subtract or
-		#whatever. We want the only selection to be where they clicked.
-		self.view.run_command("drag_select", {'event': args['event']})
-		new_sel = self.view.sel()
-		click_point = new_sel[0].a
-
-		#Restore the old selection so when we call drag_select it will
-		#behave normally.
-		new_sel.clear()
-		map(new_sel.add, old_sel)
-
-		#This is the "real" drag_select that alters the selection for real.
-		self.view.run_command("drag_select", args)
-
-		for c in sublime_plugin.all_callbacks.setdefault('on_post_mouse_down',[]):
-			c.on_post_mouse_down(click_point)
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view = self.view
@@ -445,7 +409,7 @@ class AutoSyntaxHighlight(sublime_plugin.EventListener):
             view.set_syntax_file(os.path.join(plugin_dir, "robot.tmLanguage"))
 
 #------------------------------------------------------
-# 
+# Auto completion of keywords.
 #------------------------------------------------------
 
 class AutoComplete(sublime_plugin.EventListener):
@@ -458,9 +422,13 @@ class AutoComplete(sublime_plugin.EventListener):
                                 if kw[0].keyword.name.lower().startswith(lower_prefix)]
             return user_keywords
 
-#------------------------------------------------------
-# 
-#------------------------------------------------------
+#====================================================================================================
+# Experimental Stuff...
+#====================================================================================================
+
+#-------------------------------------------------------------------------------
+# TODO: (POC) Add mouse event listener to capture the mouse cursor position. 
+#-------------------------------------------------------------------------------
 
 class MouseEventListener(sublime_plugin.EventListener):
 	#If we add the callback names to the list of all callbacks, Sublime
@@ -470,4 +438,32 @@ class MouseEventListener(sublime_plugin.EventListener):
 	#to add these to its callback list.
 	sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down', [])
 	sublime_plugin.all_callbacks.setdefault('on_post_mouse_down', [])
+
+class DragSelectCallbackCommand(sublime_plugin.TextCommand):
+	def run_(self, args):                
+		for c in sublime_plugin.all_callbacks.setdefault('on_pre_mouse_down',[]):
+			c.on_pre_mouse_down(args)
+
+        #We have to make a copy of the selection, otherwise we'll just have
+		#a *reference* to the selection which is useless if we're trying to
+		#roll back to a previous one. A RegionSet doesn't support slicing so
+		#we have a comprehension instead.
+		old_sel = [r for r in self.view.sel()]
+
+		#Only send the event so we don't do an extend or subtract or
+		#whatever. We want the only selection to be where they clicked.
+		self.view.run_command("drag_select", {'event': args['event']})
+		new_sel = self.view.sel()
+		click_point = new_sel[0].a
+
+		#Restore the old selection so when we call drag_select it will
+		#behave normally.
+		new_sel.clear()
+		map(new_sel.add, old_sel)
+
+		#This is the "real" drag_select that alters the selection for real.
+		self.view.run_command("drag_select", args)
+
+		for c in sublime_plugin.all_callbacks.setdefault('on_post_mouse_down',[]):
+			c.on_post_mouse_down(click_point)
 

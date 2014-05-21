@@ -34,7 +34,6 @@ class RobotTestCaseFile():
         regions = view.split_by_newlines(sublime.Region(0, view.size()))
         lines = [view.substr(region).encode('ascii', 'replace') + '\n' for region in regions]
         self.file = TestCaseFile(source = view.file_name())
-        print self.file.source
         FromStringPopulator(self.file, lines).populate(self.file.source)
 
 #--------------------------------------------------------------------------

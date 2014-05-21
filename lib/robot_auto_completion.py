@@ -91,25 +91,3 @@ class Search(object):
     def _insert_text(self, text):
         self.view.insert(self.edit, self.view.sel()[0].begin(), text)
 
-#------------------------------------------------------
-# Class to handle auto completing list names.
-#------------------------------------------------------
-
-class CompleteList(object):
-    def search_list_variables(self, path):
-        pattern = '\s*@\\{\w+\\}'
-        p = re.compile(pattern)
-        try:
-           with open(path, 'rb') as openFile:
-             lines = openFile.readlines()
-             for line in lines:
-                 # search if line contains string
-                 m = p.match(line)
-                 if m:
-                     itemfound=m.group(0).strip()
-                     itemfound = re.sub('[@{}]', '', itemfound)
-                     if itemfound not in self.list_variables:
-                        self.list_variables.append(itemfound)
-        except IOError as e:
-           return        
-           

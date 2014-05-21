@@ -18,38 +18,16 @@ SCAN_TIMEOUT = 5 # seconds
 
 detect_robot_regex = '\*+\s*(settings?|metadata|(user )?keywords?|test ?cases?|variables?)'
 
-class WrappedKeyword:
-    def __init__(self, data_file, keyword, file_path):
-        self.keyword = keyword
-        self.name = data_file.name + '.' + keyword.name
-        self.file_path = file_path
-        self.description = []
-        args = ', '.join(keyword.args.value)
-        if args:
-            self.description.append(args)
-        if keyword.doc.value:
-            self.description.append(keyword.doc.value)
-        self.description.append(file_path)
-
-    def show_definition(self, view, views_to_center):
-        source_path = self.keyword.source
-        new_view = view.window().open_file("%s:%d" % (source_path, self.keyword.linenumber), sublime.ENCODED_POSITION)
-        new_view.show_at_center(new_view.text_point(self.keyword.linenumber, 0))
-        if new_view.is_loading():
-            views_to_center[new_view.id()] = self.keyword.linenumber
-
-    def __eq__(self, other):
-        return isinstance(other, WrappedKeyword) and self.file_path == other.file_path
-
-    def allow_unprompted_go_to(self):
-        return True
-
+#-------------------------------------------------------------------------------
+# This class recursively scans a robot test suite file for all the keywords.
+#-------------------------------------------------------------------------------
 
 class Scanner(object):
 
     def __init__(self, view):
         self.view = view
 
+    # main method, returns all the keywords.
     def scan_file(self, data_file):
         self.start_time = time()
         self.start_path = data_file.directory
@@ -57,6 +35,30 @@ class Scanner(object):
         keywords = {}
         self.__scan_file(keywords, data_file, deque())
         return keywords
+
+    def scan_without_resources(self, file_path, keywords):
+        if file_path in self.scanned_files:
+            return
+
+        try:
+            with open(file_path, 'rb') as f:
+                lines = f.readlines()
+        except IOError as e:
+            return
+
+        cached, stored_hash = scanner_cache.get_cached_data(file_path, lines)
+        if cached:
+            self._scan_keywords(cached, keywords)
+        else:
+            try:
+                for line in lines:
+                    if re.search(detect_robot_regex, line, re.IGNORECASE) != None:
+                        data_file = self._populate_from_lines(lines, file_path)
+                        scanner_cache.put_data(file_path, data_file, stored_hash)
+                        self._scan_keywords(data_file, keywords)
+                        break
+            except DataError as de:
+                pass
 
     def __scan_file(self, keywords, data_file, import_history):
         if time() - self.start_time > SCAN_TIMEOUT:
@@ -85,9 +87,9 @@ class Scanner(object):
                         except DataError as de:
                             print 'error reading resource:', resource_path
 
-        self.scan_keywords(data_file, keywords)
+        self._scan_keywords(data_file, keywords)
 
-    def scan_keywords(self, data_file, keywords):
+    def _scan_keywords(self, data_file, keywords):
         for keyword in data_file.keyword_table:
             lower_name = keyword.name.lower()
             if not keywords.has_key(lower_name):
@@ -97,31 +99,39 @@ class Scanner(object):
                 continue
             keywords[lower_name].append(wrapped)
 
-    def scan_without_resources(self, file_path, keywords):
-        if file_path in self.scanned_files:
-            return
-
-        try:
-            with open(file_path, 'rb') as f:
-                lines = f.readlines()
-        except IOError as e:
-            return
-
-        cached, stored_hash = scanner_cache.get_cached_data(file_path, lines)
-        if cached:
-            self.scan_keywords(cached, keywords)
-        else:
-            try:
-                for line in lines:
-                    if re.search(detect_robot_regex, line, re.IGNORECASE) != None:
-                        data_file = self._populate_from_lines(lines, file_path)
-                        scanner_cache.put_data(file_path, data_file, stored_hash)
-                        self.scan_keywords(data_file, keywords)
-                        break
-            except DataError as de:
-                pass
-
     def _populate_from_lines(self, lines, file_path):
         data_file = TestCaseFile(source = file_path)
         FromStringPopulator(data_file, lines).populate(file_path)
         return data_file
+
+#-------------------------------------------------------------------------------
+# Information about a single keyword
+#-------------------------------------------------------------------------------
+
+class WrappedKeyword:
+    def __init__(self, data_file, keyword, file_path):
+        self.keyword = keyword
+        self.name = data_file.name + '.' + keyword.name
+        self.file_path = file_path
+        self.description = []
+        args = ', '.join(keyword.args.value)
+        if args:
+            self.description.append(args)
+        if keyword.doc.value:
+            self.description.append(keyword.doc.value)
+        self.description.append(file_path)
+
+    # display a keyword definition in a popup window
+    def show_definition(self, view, views_to_center):
+        source_path = self.keyword.source
+        new_view = view.window().open_file("%s:%d" % (source_path, self.keyword.linenumber), sublime.ENCODED_POSITION)
+        new_view.show_at_center(new_view.text_point(self.keyword.linenumber, 0))
+        if new_view.is_loading():
+            views_to_center[new_view.id()] = self.keyword.linenumber
+
+    def __eq__(self, other):
+        return isinstance(other, WrappedKeyword) and self.file_path == other.file_path
+
+    def allow_unprompted_go_to(self):
+        return True
+
