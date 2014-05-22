@@ -7,9 +7,9 @@ from robot.parsing.populators import FromFilePopulator
 
 views_to_center = {}
 
-#--------------------------------------------------------------------------
-# This is the class that outputs test progress and results into a window.
-#--------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+# This is a generic class that can be used to open a new window and display text in it.
+#-------------------------------------------------------------------------------------------
 class OutputWindow():
     def __init__(self, window, plugin_dir, name):
 
@@ -76,6 +76,7 @@ class LineAtCursor():
         self.line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
         self.row, self.col = view.rowcol(sel.begin())
 
+    # gets the keyword from the line
     def get_keyword(self):
         return self._get_keyword_at_pos(self.line, self.col)
 
