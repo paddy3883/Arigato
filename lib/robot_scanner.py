@@ -124,7 +124,7 @@ class WrappedKeyword:
     # display a keyword definition in a popup window
     def show_definition(self, view, views_to_center):
         source_path = self.keyword.source
-        new_view = view.window().open_file("%s:%d" % (source_path, self.keyword.linenumber), sublime.ENCODED_POSITION)
+        new_view = view.window().open_file('%s:%d' % (source_path, self.keyword.linenumber), sublime.ENCODED_POSITION)
         new_view.show_at_center(new_view.text_point(self.keyword.linenumber, 0))
         if new_view.is_loading():
             views_to_center[new_view.id()] = self.keyword.linenumber

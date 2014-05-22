@@ -21,7 +21,7 @@ import sublime_plugin
 
 from robot_scanner import Scanner, detect_robot_regex
 from robot_common import OutputWindow, RobotTestCaseFile, LineAtCursor, is_robot_format, is_robot_file, views_to_center
-from robot_keywords import GoToKeywordThread
+from robot_definitions import GoToKeywordThread
 from robot_references import FindReferencesService
 
 import robot_run
@@ -30,45 +30,13 @@ import stdlib_keywords
 
 stdlib_keywords.load(plugin_dir)
 
-#------------------------------------------------------
-# Sublime context menu command: Replace references
-#------------------------------------------------------
-
-class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
-    currentKeyword = None 
-    def run(self):
-        view = sublime.active_window().active_view()
-
-        if not is_robot_format(view):
-            return
-
-        self.currentKeyword = LineAtCursor(view).get_keyword()
-        self.window.show_input_panel("Replace With:", "", self.on_done, None, None)
-        pass
-
-    def on_done(self, text):
-        try:
-            if self.window.active_view():
-                self.window.active_view().run_command("robot_replace_references", {"oldKeyword":self.currentKeyword, "newKeyword": text} )
-        except ValueError:
-            pass
-
-#------------------------------------------------------
-# 
-#------------------------------------------------------
-
-class RightClickCommand(sublime_plugin.TextCommand):
-	def run_(self, args):
-		self.view.run_command("context_menu", args)
-#self.view.run_command("move_to", {"to":"bof"})
-
-#sel = self.view.sel()[0]
-#line = re.compile('\r|\n').split(view.substr(view.line(sel)))[0]
-#row, col = view.rowcol(sel.begin())
-
 #====================================================================================================
+# Classes used for finding the definition of a keyword.
+#   Note: See lib/robot_definitions.py for detailed implementation.
+#====================================================================================================
+#------------------------------------------------------
 # Sublime context menu command: Go to definition
-#====================================================================================================
+#------------------------------------------------------
 
 class RobotGoToKeywordCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -202,7 +170,7 @@ class AutoSyntaxHighlight(sublime_plugin.EventListener):
         if (view.file_name() != None and is_robot_file(view.file_name()) and
             view.find(detect_robot_regex, 0, sublime.IGNORECASE) != None):
 
-            view.set_syntax_file(os.path.join(plugin_dir, "robot.tmLanguage"))
+            view.set_syntax_file(os.path.join(plugin_dir, 'robot.tmLanguage'))
 
 #------------------------------------------------------
 # Auto completion of keywords.
@@ -217,6 +185,14 @@ class AutoComplete(sublime_plugin.EventListener):
             user_keywords = [(kw[0].keyword.name, kw[0].keyword.name) for kw in keywords.itervalues()
                                 if kw[0].keyword.name.lower().startswith(lower_prefix)]
             return user_keywords
+
+#------------------------------------------------------
+# Right click command.
+#------------------------------------------------------
+
+class RightClickCommand(sublime_plugin.TextCommand):
+	def run_(self, args):
+		self.view.run_command("context_menu", args)
 
 #====================================================================================================
 # Classes used for find/replace references.
@@ -235,14 +211,36 @@ class RobotFindReferencesCommand(sublime_plugin.TextCommand):
         references = FindReferencesService(self.view, edit, plugin_dir)
         references.find()
 
+#-----------------------------------------------------------
+# Sublime context menu command: Prompt Replace references
+#-----------------------------------------------------------
+
+class PromptRobotReplaceReferencesCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        view = sublime.active_window().active_view()
+
+        if not is_robot_format(view):
+            return
+
+        self.currentKeyword = LineAtCursor(view).get_keyword()
+        self.window.show_input_panel('Replace "' + self.currentKeyword + '" with: ', self.currentKeyword, self._on_done, None, None)
+        pass
+
+    def _on_done(self, text):
+        try:
+            if self.window.active_view():
+                self.window.active_view().run_command('robot_replace_references', {'old_keyword': self.currentKeyword, 'new_keyword': text} )
+        except ValueError:
+            pass
+
 #------------------------------------------------------
 # Sublime context menu command: Replace references
 #------------------------------------------------------
 
 class RobotReplaceReferencesCommand(sublime_plugin.TextCommand):
-    def run(self, edit, oldKeyword, newKeyword):
-        references = References1(self.view, edit, plugin_dir)
-        references.run(edit, oldKeyword, newKeyword)
+    def run(self, edit, old_keyword, new_keyword):
+        references = FindReferencesService(self.view, edit, plugin_dir)
+        references.replace(edit, old_keyword, new_keyword)
 
 #====================================================================================================
 # Experimental Stuff...
@@ -274,7 +272,7 @@ class DragSelectCallbackCommand(sublime_plugin.TextCommand):
 
 		#Only send the event so we don't do an extend or subtract or
 		#whatever. We want the only selection to be where they clicked.
-		self.view.run_command("drag_select", {'event': args['event']})
+		self.view.run_command('drag_select', {'event': args['event']})
 		new_sel = self.view.sel()
 		click_point = new_sel[0].a
 
@@ -283,8 +281,8 @@ class DragSelectCallbackCommand(sublime_plugin.TextCommand):
 		new_sel.clear()
 		map(new_sel.add, old_sel)
 
-		#This is the "real" drag_select that alters the selection for real.
-		self.view.run_command("drag_select", args)
+		#This is the 'real' drag_select that alters the selection for real.
+		self.view.run_command('drag_select', args)
 
 		for c in sublime_plugin.all_callbacks.setdefault('on_post_mouse_down',[]):
 			c.on_post_mouse_down(click_point)

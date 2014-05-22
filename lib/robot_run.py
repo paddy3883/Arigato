@@ -50,7 +50,7 @@ class RobotTestCase(object):
         # 1. Make sure the selected test case actually appears under ***Test Cases*** section.
         # 2. Even if the user clicks on a keyword inside a test case, execute the test case to which it belongs.
         if (len(test_case_name) == 0) or (test_case_name[0] == ' ') or (test_case_name[0] == '\t'):
-            sublime.error_message("Please place cursor on a test case")
+            sublime.error_message('Please place cursor on a test case')
             return
 
         test_case_name = test_case_name.replace(' ', '').replace('\t', '')
@@ -250,7 +250,7 @@ class Test():
             main_thread(callback, '\nTest execution is complete, but there are test failures!', **kwargs)
 
             output_file_name = os.path.join(working_dir, outputdir, 'log.html')
-            print "output file: " + output_file_name
+            print 'output file: ' + output_file_name
 
             if os.path.isfile(output_file_name):
                 webbrowser.open_new('file://' + output_file_name)

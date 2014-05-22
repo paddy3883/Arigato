@@ -69,7 +69,7 @@ class Search(object):
         self.window.show_quick_panel(self.known_variables, self._on_user_selection_of_variable)
 
         # replace the user typed ${{ with just ${
-        self._insert_text("${")
+        self._insert_text('${')
         self.curPos = self.view.sel()[0].begin()
 
     def auto_complete_list(self):
@@ -77,16 +77,16 @@ class Search(object):
         self.window.show_quick_panel(self.known_lists, self._on_user_selection_of_list)
 
         # replace the user typed @{{ with just @{
-        self._insert_text("@{")
+        self._insert_text('@{')
         self.curPos = self.view.sel()[0].begin()
 
     def _on_user_selection_of_variable(self, index):
         if index != -1:
-            self._insert_text(self.known_variables[index] + "}    ")
+            self._insert_text(self.known_variables[index] + '}    ')
 
     def _on_user_selection_of_list(self, index):
         if index != -1:
-            self._insert_text(self.known_lists[index] + "}    ")
+            self._insert_text(self.known_lists[index] + '}    ')
 
     def _insert_text(self, text):
         self.view.insert(self.edit, self.view.sel()[0].begin(), text)
