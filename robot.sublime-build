@@ -1,3 +1,19 @@
 {
-	"cmd": ["/usr/local/bin/pybot", "$file"]
+	"testsuites": "testsuites"
+	, "outputdir": "TestResults\\TestResults-gc"
+	, "variables": 
+	[
+		"os_browser:gc",
+		"environment_name:cp"
+	]
+	, "tags_to_exclude": 
+	[
+		"exclude_me",
+		"no.gc",
+		"no.gc.local",
+		"ATE"
+	]
+	, "tags_to_include": 
+	[
+	]
 }

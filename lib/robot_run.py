@@ -6,6 +6,7 @@ import subprocess
 import functools
 import json
 import webbrowser
+import shutil
 
 from robot_common import OutputWindow
 
@@ -84,6 +85,7 @@ class Test():
 
         # load settings(testsuites name, output directory, variables, tags) from settings file.
         settings_file_name = os.path.join(self.robot_root_folder, 'robot.sublime-build')
+        source_settings_file_name = os.path.join(plugin_dir, 'robot.sublime-build')
         print ('Reading the settings from: ' + settings_file_name)
 
         if os.path.isfile(settings_file_name):
@@ -109,11 +111,17 @@ class Test():
                     tags_to_include = data['tags_to_include']
 
             except:
-                sublime.error_message('Error reading: ' + settings_file_name)
+                user_decided_to_discard = sublime.ok_cancel_dialog('Error reading: (' + settings_file_name + '). Do you want to discard the existing file and create a new settings file?', 'Discard')
+                if user_decided_to_discard:
+                    shutil.copyfile(source_settings_file_name, settings_file_name)
+                    sublime.active_window().open_file(settings_file_name)
                 return
 
         else:
-            sublime.error_message('Test runner settings file is not found in location: ' + settings_file_name)
+            print 'Settings file (' + settings_file_name + ') not found. Copying the default from plugin directory.'
+            sublime.error_message('Test runner settings file is not found. Please press ok to create a new settings file and update according to your requirements')
+            shutil.copyfile(source_settings_file_name, settings_file_name)
+            sublime.active_window().open_file(settings_file_name)
             return
 
         # make sure test suites and results folders do not contain white-spaces inside.
