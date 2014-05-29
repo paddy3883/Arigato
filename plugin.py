@@ -186,14 +186,6 @@ class AutoComplete(sublime_plugin.EventListener):
                                 if kw[0].keyword.name.lower().startswith(lower_prefix)]
             return user_keywords
 
-#------------------------------------------------------
-# Right click command.
-#------------------------------------------------------
-
-class RightClickCommand(sublime_plugin.TextCommand):
-	def run_(self, args):
-		self.view.run_command("context_menu", args)
-
 #====================================================================================================
 # Classes used for find/replace references.
 #   Note: See lib/robot_references.py for detailed implementation.
