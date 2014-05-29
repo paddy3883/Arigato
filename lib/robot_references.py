@@ -4,7 +4,7 @@ import sublime
 import shutil
 import tempfile
 
-from robot_common import OutputWindow, LineAtCursor, is_robot_file
+from robot_common import OutputWindow, LineAtCursor, is_robot_file, get_keyword_at_pos
 
 #------------------------------------------------------
 # Class that is used to find/replace keyword references.
@@ -63,8 +63,11 @@ class FindReferencesService():
                     line_number = line_number + 1
                     try:
                         if phrase in str(a_line):
-                            reference = ReferencedLine(a_line.strip(), str(file_name), file_path, line_number)
-                            callback(reference)
+                            # now we know that the phrase is inside the line, but is it really a keyword, let's see...
+                            occurrance = get_keyword_at_pos(a_line, a_line.index(phrase) + 1)
+                            if occurrance == phrase:
+                                reference = ReferencedLine(a_line.strip(), str(file_name), file_path, line_number)
+                                callback(reference)
 
                     except Exception as exp:
                         print('Error in file: ' + str(file_path) + '(' + str(line_number) + '): ' + str(exp))
