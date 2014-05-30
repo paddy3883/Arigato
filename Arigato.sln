@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Definition Files", "Definit
 	ProjectSection(SolutionItems) = preProject
 		Context.sublime-menu = Context.sublime-menu
 		Default (Windows).sublime-keymap = Default (Windows).sublime-keymap
+		Default (Windows).sublime-mousemap = Default (Windows).sublime-mousemap
 		Main.sublime-menu = Main.sublime-menu
 		package-metadata.json = package-metadata.json
 		robot-output.tmLanguage = robot-output.tmLanguage
