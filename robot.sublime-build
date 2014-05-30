@@ -8,10 +8,6 @@
 	]
 	, "tags_to_exclude": 
 	[
-		"exclude_me",
-		"no.gc",
-		"no.gc.local",
-		"ATE"
 	]
 	, "tags_to_include": 
 	[
